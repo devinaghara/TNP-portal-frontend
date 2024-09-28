@@ -64,17 +64,15 @@ const AddPlacementDrive = () => {
       {/* Tabs for navigation */}
       <div className="flex mb-4 border-b">
         <button
-          className={`py-2 px-4 ${
-            activeTab === 'add' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-          }`}
+          className={`py-2 px-4 ${activeTab === 'add' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
+            }`}
           onClick={() => handleTabChange('add')}
         >
           Add Placement Drive
         </button>
         <button
-          className={`py-2 px-4 ${
-            activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-          }`}
+          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
+            }`}
           onClick={() => handleTabChange('completed')}
         >
           Completed Placement Drives

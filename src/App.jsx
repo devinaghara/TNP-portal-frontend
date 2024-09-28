@@ -17,6 +17,7 @@ import FNavbar from './components/Faculty/fNavbar';
 import AddPlacementDrive from './pages/faculty/AddPlacementDrive';
 import AddResource from './pages/faculty/AddResource';
 import AddExam from './pages/faculty/AddExam';
+import StudentCorner from './pages/faculty/StudentCorner';
 
 const App = () => {
   return (
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="addplacementDrives" element={<AddPlacementDrive />} />
           <Route path="addexam" element={<AddExam />} />
           <Route path="addresources" element={<AddResource />} />
+          <Route path="studentcorner" element={<StudentCorner />} />
         </Route>
 
         {/* Catch-all route (optional) */}
