@@ -30,7 +30,7 @@ const StudentSignUpPage = () => {
 
   useEffect(() => {
     // If no email or role, or if role is not 'student', redirect to signup page
-    if (!email || !role || role !== 'Student') {
+    if (!email || !role || role !== 'student') {
       navigate('/signup');
     }
   }, [email, role, navigate]); // Make sure to include dependencies
