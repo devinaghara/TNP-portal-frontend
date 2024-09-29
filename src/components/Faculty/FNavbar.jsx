@@ -19,7 +19,7 @@ const FNavbar = () => {
 
     useEffect(() => {
         // Redirect to the faculty path when the page loads or is refreshed
-        if (!['/faculty/addplacementDrives', '/faculty/addexam', '/faculty/addresources', '/faculty/student'].includes(location.pathname)) {
+        if (!['/faculty/addplacementDrives', '/faculty/addexam', '/faculty/addresources', '/faculty/studentcorner'].includes(location.pathname)) {
             navigate('/faculty');
         }
     }, [location.pathname, navigate]);
@@ -85,8 +85,8 @@ const FNavbar = () => {
                         </li>
                         <li>
                             <Link
-                                to="/faculty/student"
-                                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes('student') ? 'bg-gray-700' : ''}`}
+                                to="/faculty/studentcorner"
+                                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes('studentcorner') ? 'bg-gray-700' : ''}`}
                             >
                                 Student Corner
                             </Link>
