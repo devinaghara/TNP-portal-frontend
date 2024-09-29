@@ -1,7 +1,7 @@
 import React from 'react';
-import BarChart from '../components/Charts/Barchart';
+import BarChart from '../../components/Charts/Barchart';
 
-const StudentPlacementChart = () => {
+const ChartPage = () => {
   // Updated data for placement numbers by year (First Chart)
   const dataByYear = {
     labels: ['2019', '2020', '2021', '2022', '2023'],
@@ -169,4 +169,4 @@ const StudentPlacementChart = () => {
   );
 };
 
-export default StudentPlacementChart;
+export default ChartPage;

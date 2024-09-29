@@ -1,23 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SNavbar from './components/Student/SNavbar';
-import Support from './pages/SupportPage';
-import ExamCenter from './pages/ExamCenter';
-import PlacementDrives from './pages/PlacementDrives';
-import Feedback from './pages/Feedback';
-import Resources from './pages/Resources';
-import ChartPage from './pages/ChartPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignupPage';
 import StudentSignUpPage from './pages/StudentSignUpPage';
 import FacultySignUpPage from './pages/FacultySignUpPage';
 import CompanySignUpPage from './pages/CompanySignUpPage';
-import Homepage from './pages/Homepage';
+// import Homepage from './pages/Homepage';
 import FNavbar from './components/Faculty/fNavbar';
 import AddPlacementDrive from './pages/faculty/AddPlacementDrive';
 import AddResource from './pages/faculty/AddResource';
 import AddExam from './pages/faculty/AddExam';
 import StudentCorner from './pages/faculty/StudentCorner';
+import PlacementDrives from './pages/Student/PlacementDrives';
+import ExamCenter from './pages/Student/ExamCenter';
+import Resources from './pages/Student/Resources';
+import Feedback from './pages/Student/Feedback';
+import Support from './pages/Student/SupportPage';
+import ChartPage from './pages/Student/ChartPage';
 
 const App = () => {
   return (
