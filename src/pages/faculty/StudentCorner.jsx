@@ -1,21 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import StudentModal from '../../components/Faculty/StudentModal';
 
 const StudentCorner = () => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
-  const [selectedBatch, setSelectedBatch] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCollege, setSelectedCollege] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Filter states
+  const [nameFilter, setNameFilter] = useState('');
+  const [idFilter, setIdFilter] = useState(''); // New state for filtering by student ID
+  const [collegeFilter, setCollegeFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [studentsPerPage] = useState(10); // Number of students to display per page
+
+  // Unique college and department options
+  const [colleges, setColleges] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     // Fetch student data from the server
     const fetchStudents = async () => {
       try {
-        const response = await axios.get('http://localhost:3003/students', { withCredentials: true });
-        setStudents(response.data);
-        setFilteredStudents(response.data); // Initially show all students
+        const response = await axios.get('http://localhost:3003/master/all', { withCredentials: true });
+        setStudents(response.data.student);
+        setFilteredStudents(response.data.student); // Initially show all students
+
+        // Extract unique colleges and departments
+        const uniqueColleges = [...new Set(response.data.student.map(student => student.collageName))];
+        const uniqueDepartments = [...new Set(response.data.student.map(student => student.departmentName))];
+
+        setColleges(uniqueColleges);
+        setDepartments(uniqueDepartments);
       } catch (error) {
         console.error('Error fetching students:', error);
       }
@@ -24,152 +44,162 @@ const StudentCorner = () => {
     fetchStudents();
   }, []);
 
-  // Filter students by batch, college, department, and search query
-  const handleFilters = () => {
-    let filtered = students;
-
-    if (selectedBatch) {
-      filtered = filtered.filter((student) => student.batch === selectedBatch);
-    }
-
-    if (selectedCollege) {
-      filtered = filtered.filter((student) => student.college === selectedCollege);
-    }
-
-    if (selectedDepartment) {
-      filtered = filtered.filter((student) => student.department === selectedDepartment);
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (student) =>
-          student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchQuery.toLowerCase())
+  // Function to filter students based on the filter values
+  const filterStudents = () => {
+    const filtered = students.filter(student => {
+      return (
+        student.name.toLowerCase().includes(nameFilter.toLowerCase()) &&
+        student.studentId.toLowerCase().includes(idFilter.toLowerCase()) && // Filter by ID
+        (collegeFilter ? student.collageName === collegeFilter : true) &&
+        (departmentFilter ? student.departmentName === departmentFilter : true)
       );
-    }
-
+    });
     setFilteredStudents(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
-  // Apply filters whenever search, batch, college, or department change
+  // Effect to run filtering on every filter change
   useEffect(() => {
-    handleFilters();
-  }, [selectedBatch, searchQuery, selectedCollege, selectedDepartment]);
+    filterStudents();
+  }, [nameFilter, idFilter, collegeFilter, departmentFilter, students]);
+
+  // Calculate the current students to display based on the current page
+  const indexOfLastStudent = currentPage * studentsPerPage;
+  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
+
+  const openModal = (student) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedStudent(null);
+  };
+
+  // Pagination Controls
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
 
   return (
-    <div className="min-h-screen p-6 bg-gray-100">
-      <h1 className="text-3xl font-bold mb-6 text-center">Student Corner</h1>
+    <div className="m-0 p-0">
 
-      {/* Search and Filters */}
-      <div className="flex flex-wrap mb-4 space-x-4">
-        {/* Search Bar */}
+      <div className="py-6 text-center">
+        <h1 className="text-3xl font-bold">Student Corner</h1>
+      </div>
+
+      {/* Filter Inputs */}
+      <div className="flex flex-wrap justify-around mb-4 gap-4">
         <input
           type="text"
-          placeholder="Search by Name or Email"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="p-2 border rounded-lg w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Search by Name"
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          className="border border-gray-300 rounded p-2"
         />
-
-        {/* Batch Filter */}
+        <input
+          type="text"
+          placeholder="Search by ID" // New search field for student ID
+          value={idFilter}
+          onChange={(e) => setIdFilter(e.target.value)}
+          className="border border-gray-300 rounded p-2"
+        />
         <select
-          value={selectedBatch}
-          onChange={(e) => setSelectedBatch(e.target.value)}
-          className="p-2 border rounded-lg w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Batches</option>
-          <option value="2020">2020</option>
-          <option value="2021">2021</option>
-          <option value="2022">2022</option>
-          <option value="2023">2023</option>
-        </select>
-
-        {/* College Filter */}
-        <select
-          value={selectedCollege}
-          onChange={(e) => setSelectedCollege(e.target.value)}
-          className="p-2 border rounded-lg w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={collegeFilter}
+          onChange={(e) => setCollegeFilter(e.target.value)}
+          className="border border-gray-300 rounded p-2"
         >
           <option value="">All Colleges</option>
-          <option value="College A">College A</option>
-          <option value="College B">College B</option>
-          <option value="College C">College C</option>
+          {colleges.map((college, index) => (
+            <option key={index} value={college}>
+              {college}
+            </option>
+          ))}
         </select>
-
-        {/* Department Filter */}
         <select
-          value={selectedDepartment}
-          onChange={(e) => setSelectedDepartment(e.target.value)}
-          className="p-2 border rounded-lg w-1/4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+          className="border border-gray-300 rounded p-2"
         >
           <option value="">All Departments</option>
-          <option value="Computer Science">Computer Science</option>
-          <option value="Electrical Engineering">Electrical Engineering</option>
-          <option value="Mechanical Engineering">Mechanical Engineering</option>
+          {departments.map((department, index) => (
+            <option key={index} value={department}>
+              {department}
+            </option>
+          ))}
         </select>
       </div>
 
       {/* Student Table */}
-      <div className="overflow-x-auto overflow-y-auto max-h-96">
-        <table className="min-w-full table-auto bg-white shadow-md rounded-lg">
+      <div className="overflow-hidden px-4">
+        <table className="min-w-full h-full table-auto bg-white shadow-md rounded-lg border border-gray-300">
           <thead>
-            <tr className="bg-gray-200 text-gray-700 text-sm uppercase">
-              <th className="py-2 px-4">ID</th>
-              <th className="py-2 px-4">Name</th>
-              <th className="py-2 px-4">Email</th>
-              <th className="py-2 px-4">Mobile No.</th>
-              <th className="py-2 px-4">SSC Result</th>
-              <th className="py-2 px-4">HSC Result</th>
-              <th className="py-2 px-4">CGPA</th>
-              <th className="py-2 px-4">SGPA (Sem 1-8)</th>
-              <th className="py-2 px-4">Backlogs</th>
-              <th className="py-2 px-4">Interested Domains</th>
-              <th className="py-2 px-4">Resume</th>
+            <tr className="uppercase bg-gray-200">
+              <th className="py-2 px-4 border">Name</th>
+              <th className="py-2 px-4 border">Student ID</th>
+              <th className="py-2 px-4 border">College Name</th>
+              <th className="py-2 px-4 border">CGPA</th>
+              <th className="py-2 px-4 border">Department</th>
+              <th className="py-2 px-4 border">Interested Domains</th>
+              <th className="py-2 px-4 border">Details</th>
             </tr>
           </thead>
           <tbody>
-            {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => (
-                <tr key={student.id} className="text-center text-gray-700">
-                  <td className="py-2 px-4 border">{index + 1}</td>
+            {currentStudents.length > 0 ? (
+              currentStudents.map((student, index) => (
+                <tr key={student._id} className={`text-center ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
                   <td className="py-2 px-4 border">{student.name}</td>
-                  <td className="py-2 px-4 border">{student.email}</td>
-                  <td className="py-2 px-4 border">{student.mobileNumber}</td>
-                  <td className="py-2 px-4 border">{student.sscResult}</td>
-                  <td className="py-2 px-4 border">{student.hscResult}</td>
+                  <td className="py-2 px-4 border">{student.studentId}</td>
+                  <td className="py-2 px-4 border">{student.collageName}</td>
                   <td className="py-2 px-4 border">{student.cgpa}</td>
+                  <td className="py-2 px-4 border">{student.departmentName}</td>
+                  <td className="py-2 px-4 border">{student.interestedDomain.join(', ')}</td>
                   <td className="py-2 px-4 border">
-                    {Object.keys(student.sgpa).map((semester) => (
-                      <div key={semester}>
-                        {semester}: {student.sgpa[semester]}
-                      </div>
-                    ))}
-                  </td>
-                  <td className="py-2 px-4 border">{student.noOfBacklog}</td>
-                  <td className="py-2 px-4 border">
-                    {student.interestedDomain.join(', ')}
-                  </td>
-                  <td className="py-2 px-4 border">
-                    {student.resume ? (
-                      <a href={student.resume} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                        View Resume
-                      </a>
-                    ) : (
-                      'No Resume Uploaded'
-                    )}
+                    <button 
+                      onClick={() => openModal(student)} 
+                      className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    >
+                      View Details
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="11" className="text-center py-4 text-gray-500">
-                  No students found for this batch/college/department.
+                <td colSpan="7" className="text-center py-4">
+                  No students found.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center my-4">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="mx-2 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+        >
+          Previous
+        </button>
+        <span className="flex items-center">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="mx-2 px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+        >
+          Next
+        </button>
+      </div>
+
+      {/* Modal for Student Details */}
+      {isModalOpen && (
+        <StudentModal student={selectedStudent} onClose={closeModal} />
+      )}
     </div>
   );
 };
