@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const StudentSignUpPage = () => {
   const [selectedDomains, setSelectedDomains] = useState([]);
-  const [otherDomain, setOtherDomain] = useState('');
+  const [otherDomain, setOtherDomain] = useState("");
   const [sgpaFields, setSgpaFields] = useState([1]); // Start with one field
 
   const navigate = useNavigate();
@@ -25,14 +25,16 @@ const StudentSignUpPage = () => {
     }
   };
 
-  const email = state?.email || '';
-  const role = state?.role || '';
+  const email = state?.email || "";
+  const role = state?.role || "";
+  const name = state?.name || "";
+  const idNo = state?.idNo || "";
 
   useEffect(() => {
     // If no email or role, or if role is not 'student', redirect to signup page
-    console.log(role);
-    if (!email || !role || role !== 'Student') {
-      navigate('/signup');
+    // console.log(role);
+    if (!email || !role || role !== "Student") {
+      navigate("/signup");
     }
   }, [email, role, navigate]); // Make sure to include dependencies
 
@@ -59,12 +61,16 @@ const StudentSignUpPage = () => {
     };
 
     try {
-      console.log(studentData)
-      const response = await axios.post('http://localhost:3003/auth/add/student', studentData,{
-        withCredentials:true
-      });
+      console.log(studentData);
+      const response = await axios.post(
+        "http://localhost:3003/auth/add/student",
+        studentData,
+        {
+          withCredentials: true,
+        }
+      );
       console.log(response.data); // Handle success (e.g., redirect or show a success message)
-      navigate('/'); // Redirect to success page (adjust as needed)
+      navigate("/"); // Redirect to success page (adjust as needed)
     } catch (error) {
       console.error(error); // Handle error (e.g., show an error message)
     }
@@ -75,12 +81,14 @@ const StudentSignUpPage = () => {
       className="relative min-h-screen bg-cover bg-center"
       style={{
         backgroundImage:
-          'url(https://res.cloudinary.com/ddxe0b0kf/image/upload/v1723373873/ps538j7lnfoqyb9uolyo.jpg)',
+          "url(https://res.cloudinary.com/ddxe0b0kf/image/upload/v1723373873/ps538j7lnfoqyb9uolyo.jpg)",
       }}
     >
       <div className="flex items-center justify-center min-h-screen px-4">
         <div className="w-full max-w-3xl bg-white p-8 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold mb-6 text-center">Student Details</h1>
+          <h1 className="text-2xl font-bold mb-6 text-center">
+            Student Details
+          </h1>
           <form className="flex flex-col space-y-4" onSubmit={handleSubmit}>
             {/* Name and ID Number Fields */}
             <div className="flex mb-6 space-x-4">
@@ -92,6 +100,7 @@ const StudentSignUpPage = () => {
                   type="text"
                   id="name"
                   name="name"
+                  value={name}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   required
                 />
@@ -104,6 +113,7 @@ const StudentSignUpPage = () => {
                   type="text"
                   id="idNumber"
                   name="idNumber"
+                  value={idNo}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   required
                 />
@@ -163,7 +173,10 @@ const StudentSignUpPage = () => {
 
             {/* Other Fields */}
             <div className="mb-6">
-              <label htmlFor="mobileNumber" className="block text-gray-700 mb-2">
+              <label
+                htmlFor="mobileNumber"
+                className="block text-gray-700 mb-2"
+              >
                 Mobile Number
               </label>
               <input
@@ -199,7 +212,10 @@ const StudentSignUpPage = () => {
               />
             </div>
             <div className="mb-6">
-              <label htmlFor="diplomaResult" className="block text-gray-700 mb-2">
+              <label
+                htmlFor="diplomaResult"
+                className="block text-gray-700 mb-2"
+              >
                 Diploma Result
               </label>
               <input
@@ -223,11 +239,16 @@ const StudentSignUpPage = () => {
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 mb-2">SGPA (All Semesters)</label>
+              <label className="block text-gray-700 mb-2">
+                SGPA (All Semesters)
+              </label>
               <div className="flex flex-wrap space-x-4">
                 {sgpaFields.map((_, index) => (
                   <div className="flex flex-col mb-4" key={index}>
-                    <label htmlFor={`sgpa${index}`} className="block text-gray-700 mb-2">
+                    <label
+                      htmlFor={`sgpa${index}`}
+                      className="block text-gray-700 mb-2"
+                    >
                       SGPA {index + 1}
                     </label>
                     <input
@@ -265,9 +286,16 @@ const StudentSignUpPage = () => {
 
             {/* Interested Domains */}
             <div className="mb-6">
-              <label className="block text-gray-700 mb-2">Interested Domains</label>
+              <label className="block text-gray-700 mb-2">
+                Interested Domains
+              </label>
               <div className="flex flex-wrap space-x-4">
-                {['Web Development', 'Machine Learning', 'Data Science', 'Other'].map((domain) => (
+                {[
+                  "Web Development",
+                  "Machine Learning",
+                  "Data Science",
+                  "Other",
+                ].map((domain) => (
                   <label key={domain} className="inline-flex items-center">
                     <input
                       type="checkbox"
@@ -280,7 +308,7 @@ const StudentSignUpPage = () => {
                   </label>
                 ))}
               </div>
-              {selectedDomains.includes('Other') && (
+              {selectedDomains.includes("Other") && (
                 <input
                   type="text"
                   value={otherDomain}
