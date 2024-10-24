@@ -58,16 +58,6 @@ const FNavbar = () => {
           <ul className="mt-6 space-y-4">
             <li>
               <Link
-                to="/faculty"
-                className={`block px-4 py-2 hover:bg-gray-700 ${
-                  location.pathname === "/faculty" ? "bg-gray-700" : ""
-                }`}
-              >
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link
                 to="/faculty/addplacementDrives"
                 className={`block px-4 py-2 hover:bg-gray-700 ${
                   location.pathname.includes("addplacementDrives")

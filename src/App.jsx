@@ -18,6 +18,7 @@ import Resources from './pages/Student/Resources';
 import Feedback from './pages/Student/Feedback';
 import Support from './pages/Student/SupportPage';
 import ChartPage from './pages/Student/ChartPage';
+import ProfilePage from './components/Student/ProfilePage';
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
         {/* Routes wrapped with the SNavbar for Students */}
         <Route path="/" element={<SNavbar />}>
           <Route index element={<ChartPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="placementDrives" element={<PlacementDrives />} />
           <Route path="examCenter" element={<ExamCenter />} />
           <Route path="resources" element={<Resources />} />

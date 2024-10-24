@@ -33,13 +33,15 @@ const PlacementDrives = () => {
             {/* Tabs */}
             <div className="mb-6">
                 <button
-                    className={`px-4 py-2 mr-4 ${activeTab === 'upcoming' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                    className={`py-2 px-4 ${activeTab === 'upcoming' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
+                        }`}
                     onClick={() => setActiveTab('upcoming')}
                 >
                     Upcoming Drives
                 </button>
                 <button
-                    className={`px-4 py-2 ${activeTab === 'past' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                    className={`py-2 px-4 ${activeTab === 'past' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
+                        }`}
                     onClick={() => setActiveTab('past')}
                 >
                     Past Drives
