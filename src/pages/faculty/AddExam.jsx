@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { FaCheckCircle, FaEdit } from 'react-icons/fa';
+import { CalendarDays, MapPin, Clock, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const AddExam = () => {
   const [activeTab, setActiveTab] = useState('scheduled');
@@ -7,67 +10,105 @@ const AddExam = () => {
   const [completedExams, setCompletedExams] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [currentExam, setCurrentExam] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  // Handle form submission for adding or editing an exam
-  const handleFormSubmit = (event) => {
-    event.preventDefault();
-    const newExam = {
-      date: event.target.date.value,
-      time: event.target.time.value,
-      examType: event.target.examType.value,
-      venue: event.target.venue.value,
-      collegeName: event.target.collegeName.value,
-      departmentName: event.target.departmentName.value,
-      duration: event.target.duration.value,
-      done: false,
-    };
-
-    if (editingIndex !== null) {
-      // Update existing exam
-      const updatedExams = [...exams];
-      updatedExams[editingIndex] = newExam;
-      setExams(updatedExams);
-      setEditingIndex(null); // Reset editing index
-    } else {
-      // Add new exam
-      setExams([...exams, newExam]);
+  // Function to add exam to backend using axios
+  const addExamToBackend = async (examData) => {
+    try {
+      const response = await axios.post('http://localhost:3003/exam/add', {
+        examDate: examData.date,
+        examTime: examData.time,
+        examDuration: examData.duration,
+        examDepartment: examData.departmentName,
+        examCollage: examData.collegeName,
+        examType: examData.examType,
+        examStatus: 'scheduled',
+        venue: examData.venue
+      },
+        {
+          withCredentials: true,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || error.message || 'Failed to add exam';
     }
-
-    event.target.reset();
-    setCurrentExam({}); // Reset current exam
   };
 
-  // Handle marking exam as done
+  // Handle form submission for adding or editing an exam
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+
+    try {
+      const newExam = {
+        date: event.target.date.value,
+        time: event.target.time.value,
+        examType: event.target.examType.value,
+        venue: event.target.venue.value,
+        collegeName: event.target.collegeName.value,
+        departmentName: event.target.departmentName.value,
+        duration: event.target.duration.value,
+        done: false,
+      };
+
+      // Add exam to backend
+      const savedExam = await addExamToBackend(newExam);
+
+      if (editingIndex !== null) {
+        const updatedExams = [...exams];
+        updatedExams[editingIndex] = newExam;
+        setExams(updatedExams);
+        setEditingIndex(null);
+      } else {
+        setExams([...exams, newExam]);
+      }
+
+      toast.success('Exam added successfully!');
+      event.target.reset();
+      setCurrentExam({});
+    } catch (error) {
+      toast.error(error.message || 'Failed to add exam');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const markExamAsDone = (index) => {
     const examToComplete = exams[index];
     setCompletedExams([...completedExams, { ...examToComplete, done: true }]);
-
     const updatedExams = exams.filter((_, i) => i !== index);
     setExams(updatedExams);
   };
 
-  // Handle edit exam
   const handleEditExam = (index) => {
     setCurrentExam(exams[index]);
     setEditingIndex(index);
+  };
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Add Exam</h1>
 
-      {/* Tabs for Scheduled and Completed Exams */}
+      {/* Tabs */}
       <div className="mb-4">
         <button
-          className={`py-2 px-4 ${activeTab === 'scheduled' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-            }`}
+          className={`py-2 px-4 ${activeTab === 'scheduled' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
           onClick={() => setActiveTab('scheduled')}
         >
           Scheduled Exams
         </button>
         <button
-          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-            }`}
+          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
           onClick={() => setActiveTab('completed')}
         >
           Completed Exams
@@ -108,7 +149,7 @@ const AddExam = () => {
                   type="text"
                   id="examType"
                   className="w-full border border-gray-300 p-2 rounded-md"
-                  placeholder="e.g., Final, Midterm"
+                  placeholder="e.g., aptitude, technical"
                   required
                   defaultValue={currentExam.examType}
                 />
@@ -171,8 +212,9 @@ const AddExam = () => {
             <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              disabled={loading}
             >
-              {editingIndex !== null ? 'Update Exam' : 'Add Exam'}
+              {loading ? 'Saving...' : (editingIndex !== null ? 'Update Exam' : 'Add Exam')}
             </button>
           </form>
 
@@ -208,9 +250,8 @@ const AddExam = () => {
                         onClick={() => markExamAsDone(index)}
                       />
                       <FaEdit
-                        className={`text-blue-500 cursor-pointer ${exam.done ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="text-blue-500 cursor-pointer"
                         onClick={() => handleEditExam(index)}
-                        title={exam.done ? 'Cannot edit completed exam' : ''}
                       />
                     </td>
                   </tr>
@@ -224,18 +265,59 @@ const AddExam = () => {
       )}
 
       {activeTab === 'completed' && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Completed Exams</h3>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold">Completed Exams</h3>
+            <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+              {completedExams.length} Completed
+            </span>
+          </div>
+
           {completedExams.length > 0 ? (
-            <ul className="list-disc pl-6">
+            <div className="space-y-4">
               {completedExams.map((exam, index) => (
-                <li key={index}>
-                  {exam.date} - {exam.examType} at {exam.venue} (Duration: {exam.duration} min)
-                </li>
+                <div
+                  key={index}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <h4 className="text-lg font-medium text-gray-900">
+                        {exam.examType}
+                      </h4>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      Duration: {exam.duration} min
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <CalendarDays className="w-4 h-4" />
+                      <span className="text-sm">{formatDate(exam.date)}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm">{exam.time}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">{exam.venue}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p className="text-gray-500">No completed exams yet.</p>
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm">No completed exams yet.</p>
+            </div>
           )}
         </div>
       )}
