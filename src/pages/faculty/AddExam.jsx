@@ -42,33 +42,34 @@ const AddExam = () => {
 
     try {
       const newExam = {
-        date: event.target.date.value,
-        time: event.target.time.value,
+        examDate: event.target.date.value,
+        examTime: event.target.time.value,
+        examDuration: parseInt(event.target.duration.value),
+        examDepartment: event.target.departmentName.value,
+        examCollage: event.target.collegeName.value,
         examType: event.target.examType.value,
-        venue: event.target.venue.value,
-        collegeName: event.target.collegeName.value,
-        departmentName: event.target.departmentName.value,
-        duration: event.target.duration.value,
-        done: false,
+        examStatus: 'scheduled',
+        venue: event.target.venue.value
       };
 
       // Add exam to backend
-      const savedExam = await addExamToBackend(newExam);
+      const response = await axios.post('http://localhost:3003/exam/add', newExam, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (editingIndex !== null) {
-        const updatedExams = [...exams];
-        updatedExams[editingIndex] = newExam;
-        setExams(updatedExams);
-        setEditingIndex(null);
+      if (response.data.success) {
+        toast.success('Exam added successfully!');
+        event.target.reset();
+        setCurrentExam({});
       } else {
-        setExams([...exams, newExam]);
+        throw new Error(response.data.message);
       }
-
-      toast.success('Exam added successfully!');
-      event.target.reset();
-      setCurrentExam({});
     } catch (error) {
-      toast.error(error.message || 'Failed to add exam');
+      console.error('Error adding exam:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to add exam');
     } finally {
       setLoading(false);
     }
