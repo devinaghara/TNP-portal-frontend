@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc"; // Google icon from react-icons
-import { useLocation, useNavigate } from "react-router-dom"; // Update import
+import { useNavigate } from "react-router-dom"; // Update import
 import { useForm } from "react-hook-form"; // Import useForm
 import axios from "axios"; // Import axios for requests
 
@@ -13,7 +13,7 @@ const SignUpPage = () => {
     formState: { errors },
     setError,
   } = useForm(); // Set up react-hook-form
-  const { state } = useLocation();
+  // const { state } = useLocation();
 
   const handleRoleChange = (event) => {
     setRole(event.target.value);

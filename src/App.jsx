@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SNavbar from './components/Student/SNavbar';
 import LoginPage from './pages/LoginPage';

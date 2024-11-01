@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaCalendarAlt, FaClock, FaBookOpen, FaMapMarkerAlt, FaHourglassHalf, FaSyncAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { BiTask } from 'react-icons/bi';
@@ -15,7 +15,7 @@ const ExamCenter = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('/exam/student/show', {
+            const response = await axios.get('http://localhost:3003/exam/student/show', {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'application/json',
