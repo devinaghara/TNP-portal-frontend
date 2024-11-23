@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { FaCheckCircle, FaEdit } from 'react-icons/fa';
-import { CalendarDays, MapPin, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FaCheckCircle, FaEdit, FaSpinner } from 'react-icons/fa';
+import { CalendarDays, MapPin, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+// import { Alert, AlertDescription } from '@/components/ui/alert';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -9,82 +10,144 @@ const AddExam = () => {
   const [exams, setExams] = useState([]);
   const [completedExams, setCompletedExams] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [currentExam, setCurrentExam] = useState({});
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState({});
+  const [formData, setFormData] = useState({
+    examDate: '',
+    examTime: '',
+    examDuration: '',
+    examDepartment: '',
+    examCollage: '',
+    examType: '',
+    venue: ''
+  });
 
-  // Function to add exam to backend using axios
-  const addExamToBackend = async (examData) => {
+  const resetForm = () => {
+    setFormData({
+      examDate: '',
+      examTime: '',
+      examDuration: '',
+      examDepartment: '',
+      examCollage: '',
+      examType: '',
+      venue: ''
+    });
+    setEditingIndex(null);
+  };
+
+  const fetchExams = async () => {
     try {
-      const response = await axios.post('http://localhost:3003/exam/add', {
-        examDate: examData.date,
-        examTime: examData.time,
-        examDuration: examData.duration,
-        examDepartment: examData.departmentName,
-        examCollage: examData.collegeName,
-        examType: examData.examType,
-        examStatus: 'scheduled',
-        venue: examData.venue
-      },
-        {
-          withCredentials: true,
-        }
-      );
-      return response.data;
+      setFetchLoading(true);
+      const response = await axios.get('http://localhost:3003/exam/show?type=faculty', {
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        const scheduledExams = response.data.exams.filter(exam => exam.examStatus === 'scheduled');
+        const completed = response.data.exams.filter(exam => exam.examStatus === 'completed');
+        setExams(scheduledExams);
+        setCompletedExams(completed);
+      } else {
+        throw new Error(response.data.message);
+      }
     } catch (error) {
-      throw error.response?.data?.message || error.message || 'Failed to add exam';
+      toast.error(error.response?.data?.message || error.message || 'Failed to fetch exams');
+    } finally {
+      setFetchLoading(false);
     }
   };
 
-  // Handle form submission for adding or editing an exam
+  useEffect(() => {
+    fetchExams();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
 
     try {
-      const newExam = {
-        examDate: event.target.date.value,
-        examTime: event.target.time.value,
-        examDuration: parseInt(event.target.duration.value),
-        examDepartment: event.target.departmentName.value,
-        examCollage: event.target.collegeName.value,
-        examType: event.target.examType.value,
-        examStatus: 'scheduled',
-        venue: event.target.venue.value
-      };
+      if (editingIndex) {
+        const response = await axios.put(
+          `http://localhost:3003/exam/edit/${editingIndex}`,
+          formData,
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
 
-      // Add exam to backend
-      const response = await axios.post('http://localhost:3003/exam/add', newExam, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
+        if (response.data.success) {
+          toast.success('Exam updated successfully!');
+          resetForm();
+          await fetchExams();
         }
-      });
-
-      if (response.data.success) {
-        toast.success('Exam added successfully!');
-        event.target.reset();
-        setCurrentExam({});
       } else {
-        throw new Error(response.data.message);
+        const response = await axios.post(
+          'http://localhost:3003/exam/add',
+          { ...formData, examStatus: 'scheduled' },
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.data.success) {
+          toast.success('Exam added successfully!');
+          resetForm();
+          await fetchExams();
+        }
       }
     } catch (error) {
-      console.error('Error adding exam:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to add exam');
+      toast.error(error.response?.data?.message || error.message || 'Failed to save exam');
     } finally {
       setLoading(false);
     }
   };
 
-  const markExamAsDone = (index) => {
-    const examToComplete = exams[index];
-    setCompletedExams([...completedExams, { ...examToComplete, done: true }]);
-    const updatedExams = exams.filter((_, i) => i !== index);
-    setExams(updatedExams);
+  const handleEditExam = (exam) => {
+    setFormData({
+      examDate: exam.examDate?.split('T')[0] || '',
+      examTime: exam.examTime || '',
+      examDuration: exam.examDuration || '',
+      examDepartment: exam.examDepartment || '',
+      examCollage: exam.examCollage || '',
+      examType: exam.examType || '',
+      venue: exam.venue || ''
+    });
+    setEditingIndex(exam._id);
   };
 
-  const handleEditExam = (index) => {
-    setCurrentExam(exams[index]);
-    setEditingIndex(index);
+  const updateExamStatus = async (examId, newStatus) => {
+    setStatusUpdateLoading(prev => ({ ...prev, [examId]: true }));
+    try {
+      const response = await axios.patch(
+        `http://localhost:3003/exam/updateStatus/${examId}`,
+        { examStatus: newStatus },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success(`Exam marked as ${newStatus}!`);
+        await fetchExams();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Failed to update exam status');
+    } finally {
+      setStatusUpdateLoading(prev => ({ ...prev, [examId]: false }));
+    }
   };
 
   const formatDate = (dateStr) => {
@@ -96,11 +159,59 @@ const AddExam = () => {
     });
   };
 
+  const StatusBadge = ({ status }) => {
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'completed':
+          return 'bg-green-100 text-green-800';
+        case 'scheduled':
+          return 'bg-blue-100 text-blue-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  const StatusActions = ({ exam }) => {
+    if (statusUpdateLoading[exam._id]) {
+      return <FaSpinner className="animate-spin text-gray-500" />;
+    }
+
+    switch (exam.examStatus) {
+      case 'scheduled':
+        return (
+          <div className="flex space-x-2">
+            <button
+              onClick={() => updateExamStatus(exam._id, 'completed')}
+              className="text-green-500 hover:text-green-600"
+              title="Mark as completed"
+            >
+              <CheckCircle className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => handleEditExam(exam)}
+              className="text-blue-500 hover:text-blue-600"
+              title="Edit exam"
+            >
+              <FaEdit className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Add Exam</h1>
+      <h1 className="text-3xl font-bold mb-6">Exam Management</h1>
 
-      {/* Tabs */}
       <div className="mb-4">
         <button
           className={`py-2 px-4 ${activeTab === 'scheduled' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
@@ -118,27 +229,28 @@ const AddExam = () => {
 
       {activeTab === 'scheduled' && (
         <div>
-          {/* Add/Edit Exam Form */}
           <form onSubmit={handleFormSubmit} className="space-y-4 max-w-lg mb-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="date" className="block text-sm font-medium mb-1">Date</label>
+                <label htmlFor="examDate" className="block text-sm font-medium mb-1">Date</label>
                 <input
                   type="date"
-                  id="date"
+                  id="examDate"
+                  value={formData.examDate}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   required
-                  defaultValue={currentExam.date}
                 />
               </div>
               <div>
-                <label htmlFor="time" className="block text-sm font-medium mb-1">Time</label>
+                <label htmlFor="examTime" className="block text-sm font-medium mb-1">Time</label>
                 <input
                   type="time"
-                  id="time"
+                  id="examTime"
+                  value={formData.examTime}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   required
-                  defaultValue={currentExam.time}
                 />
               </div>
             </div>
@@ -149,10 +261,11 @@ const AddExam = () => {
                 <input
                   type="text"
                   id="examType"
+                  value={formData.examType}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   placeholder="e.g., aptitude, technical"
                   required
-                  defaultValue={currentExam.examType}
                 />
               </div>
               <div>
@@ -160,22 +273,24 @@ const AddExam = () => {
                 <input
                   type="text"
                   id="venue"
+                  value={formData.venue}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   placeholder="e.g., Room 101"
                   required
-                  defaultValue={currentExam.venue}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="collegeName" className="block text-sm font-medium mb-1">College Name</label>
+                <label htmlFor="examCollage" className="block text-sm font-medium mb-1">College Name</label>
                 <select
-                  id="collegeName"
+                  id="examCollage"
+                  value={formData.examCollage}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   required
-                  defaultValue={currentExam.collegeName}
                 >
                   <option value="">Select College</option>
                   <option value="DEPSTAR">DEPSTAR</option>
@@ -183,12 +298,13 @@ const AddExam = () => {
                 </select>
               </div>
               <div>
-                <label htmlFor="departmentName" className="block text-sm font-medium mb-1">Department Name</label>
+                <label htmlFor="examDepartment" className="block text-sm font-medium mb-1">Department Name</label>
                 <select
-                  id="departmentName"
+                  id="examDepartment"
+                  value={formData.examDepartment}
+                  onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   required
-                  defaultValue={currentExam.departmentName}
                 >
                   <option value="">Select Department</option>
                   <option value="CE">CE</option>
@@ -199,68 +315,86 @@ const AddExam = () => {
             </div>
 
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium mb-1">Duration (minutes)</label>
+              <label htmlFor="examDuration" className="block text-sm font-medium mb-1">Duration (minutes)</label>
               <input
                 type="number"
-                id="duration"
+                id="examDuration"
+                value={formData.examDuration}
+                onChange={handleInputChange}
                 className="w-full border border-gray-300 p-2 rounded-md"
                 placeholder="e.g., 120"
                 required
-                defaultValue={currentExam.duration}
               />
             </div>
 
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (editingIndex !== null ? 'Update Exam' : 'Add Exam')}
-            </button>
+            <div className="flex space-x-4">
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : (editingIndex ? 'Update Exam' : 'Add Exam')}
+              </button>
+              {editingIndex && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
           </form>
 
           {/* Scheduled Exams Table */}
           <h3 className="text-xl font-semibold mb-4">Scheduled Exams</h3>
-          {exams.length > 0 ? (
-            <table className="min-w-full bg-white border border-gray-300 mb-6">
-              <thead>
-                <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-2 px-4 text-left">Date</th>
-                  <th className="py-2 px-4 text-left">Time</th>
-                  <th className="py-2 px-4 text-left">Exam Type</th>
-                  <th className="py-2 px-4 text-left">Venue</th>
-                  <th className="py-2 px-4 text-left">College</th>
-                  <th className="py-2 px-4 text-left">Department</th>
-                  <th className="py-2 px-4 text-left">Duration</th>
-                  <th className="py-2 px-4 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {exams.map((exam, index) => (
-                  <tr key={index} className="border-b border-gray-200">
-                    <td className="py-2 px-4">{exam.date}</td>
-                    <td className="py-2 px-4">{exam.time}</td>
-                    <td className="py-2 px-4">{exam.examType}</td>
-                    <td className="py-2 px-4">{exam.venue}</td>
-                    <td className="py-2 px-4">{exam.collegeName}</td>
-                    <td className="py-2 px-4">{exam.departmentName}</td>
-                    <td className="py-2 px-4">{exam.duration} min</td>
-                    <td className="py-2 px-4 flex items-center space-x-2">
-                      <FaCheckCircle
-                        className="text-green-500 cursor-pointer"
-                        onClick={() => markExamAsDone(index)}
-                      />
-                      <FaEdit
-                        className="text-blue-500 cursor-pointer"
-                        onClick={() => handleEditExam(index)}
-                      />
-                    </td>
+          {fetchLoading ? (
+            <div className="text-center py-4">Loading exams...</div>
+          ) : exams.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-300 mb-6">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                    <th className="py-2 px-4 text-left">Date</th>
+                    <th className="py-2 px-4 text-left">Time</th>
+                    <th className="py-2 px-4 text-left">Exam Type</th>
+                    <th className="py-2 px-4 text-left">Venue</th>
+                    <th className="py-2 px-4 text-left">College</th>
+                    <th className="py-2 px-4 text-left">Department</th>
+                    <th className="py-2 px-4 text-left">Duration</th>
+                    <th className="py-2 px-4 text-left">Status</th>
+                    <th className="py-2 px-4 text-left">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {exams.map((exam) => (
+                    <tr key={exam._id} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-2 px-4">{formatDate(exam.examDate)}</td>
+                      <td className="py-2 px-4">{exam.examTime}</td>
+                      <td className="py-2 px-4">{exam.examType}</td>
+                      <td className="py-2 px-4">{exam.venue}</td>
+                      <td className="py-2 px-4">{exam.examCollage}</td>
+                      <td className="py-2 px-4">{exam.examDepartment}</td>
+                      <td className="py-2 px-4">{exam.examDuration} min</td>
+                      <td className="py-2 px-4">
+                        <StatusBadge status={exam.examStatus} />
+                      </td>
+                      <td className="py-2 px-4">
+                        <StatusActions exam={exam} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <p className="text-gray-500">No exams scheduled yet.</p>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 text-gray-500">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>No exams scheduled yet.</span>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -289,19 +423,19 @@ const AddExam = () => {
                       </h4>
                     </div>
                     <span className="text-sm text-gray-500">
-                      Duration: {exam.duration} min
+                      Duration: {exam.examDuration} min
                     </span>
                   </div>
 
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="flex items-center space-x-2 text-gray-600">
                       <CalendarDays className="w-4 h-4" />
-                      <span className="text-sm">{formatDate(exam.date)}</span>
+                      <span className="text-sm">{formatDate(exam.examDate)}</span>
                     </div>
 
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Clock className="w-4 h-4" />
-                      <span className="text-sm">{exam.time}</span>
+                      <span className="text-sm">{exam.examTime}</span>
                     </div>
 
                     <div className="flex items-center space-x-2 text-gray-600">

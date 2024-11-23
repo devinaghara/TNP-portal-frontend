@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCircle, FaBars, FaTimes } from 'react-icons/fa';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import axios from 'axios';
 
 const SNavbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
 
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -27,6 +29,37 @@ const SNavbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      const response = await axios.delete(
+        'http://localhost:3003/auth/logout', 
+        {}, 
+        {
+          withCredentials: true // Required for cookies to be sent with request
+        }
+      );
+
+      if (response.data.success) {
+        // Clear local storage
+        localStorage.clear();
+        
+        // Close dropdown
+        setDropdownOpen(false);
+        
+        // Redirect to login page
+        navigate('/login');
+      } else {
+        console.error('Logout failed:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Logout error:', error.response?.data?.message || error.message);
+      // You might want to show an error toast/alert here
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -110,8 +143,12 @@ const SNavbar = () => {
                     </Link>
                   </li>
                   <li>
-                    <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                      Logout
+                    <button 
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                    >
+                      {isLoggingOut ? 'Logging out...' : 'Logout'}
                     </button>
                   </li>
                 </ul>

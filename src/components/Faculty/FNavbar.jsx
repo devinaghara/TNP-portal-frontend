@@ -1,13 +1,15 @@
-import  { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import ProfilePopup from "./ProfilePopup";
+import axios from 'axios';
 
 const FNavbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
 
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -39,6 +41,36 @@ const FNavbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      const response = await axios.delete(
+        'http://localhost:3003/auth/logout',
+        {},
+        {
+          withCredentials: true
+        }
+      );
+
+      if (response.data.success) {
+        // Clear any localStorage items
+        localStorage.clear();
+        
+        // Close dropdown
+        setDropdownOpen(false);
+        
+        // Redirect to login page
+        navigate('/login');
+      } else {
+        console.error('Logout failed:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Logout error:', error.response?.data?.message || error.message);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -158,9 +190,13 @@ const FNavbar = () => {
                     </button>
                   </li>
                   <li>
-                    <Link to="/" className="block px-4 py-2 hover:bg-gray-200">
-                      Log Out
-                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      {isLoggingOut ? 'Logging out...' : 'Logout'}
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -172,16 +208,12 @@ const FNavbar = () => {
 
         {/* Main content area below navbar */}
         <div className="flex-1 pt-4 overflow-hidden mt-16">
-          {" "}
-          {/* Adjust `mt-16` based on the navbar height */}
           <div className="h-full overflow-hidden">
-            {/* Table Container */}
             <div
               className="overflow-y-auto h-full"
               style={{ maxHeight: "calc(100vh - 200px)" }}
             >
-              <Outlet />{" "}
-              {/* This is where the nested route content (like the table) will be displayed */}
+              <Outlet />
             </div>
           </div>
         </div>

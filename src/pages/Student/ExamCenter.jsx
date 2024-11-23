@@ -15,7 +15,7 @@ const ExamCenter = () => {
     const fetchExams = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('http://localhost:3003/exam/student/show', {
+            const response = await axios.get('http://localhost:3003/exam/show?type=student', {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ const ExamCenter = () => {
                 throw new Error('No data received from server');
             }
 
-            const examData = Array.isArray(response.data) ? response.data : [response.data];
+            const examData = Array.isArray(response.data.exams) ? response.data.exams : [response.data.exams];
 
             if (examData.length === 0) {
                 console.log('No exams found in the response');
