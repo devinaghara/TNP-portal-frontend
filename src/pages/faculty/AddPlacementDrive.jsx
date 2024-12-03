@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { FaCheckCircle } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const AddPlacementDrive = () => {
   const [activeTab, setActiveTab] = useState('add');
@@ -8,52 +10,119 @@ const AddPlacementDrive = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [currentDrive, setCurrentDrive] = useState(null);
   const [noPlacedStudents, setNoPlacedStudents] = useState('');
+  
+  // Loading states
+  const [loadingDrives, setLoadingDrives] = useState(true);
+  const [loadingCompletedDrives, setLoadingCompletedDrives] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Fetch ongoing placement drives
+  const fetchOngoingDrives = async () => {
+    try {
+      setLoadingDrives(true);
+      const response = await axios.get('http://localhost:3003/placementdrive/placement/list?type=faculty', {
+        withCredentials: true
+      });
+  
+      // Use response.upcomingDrives instead of response.data.drives
+      setDrives(Array.isArray(response.data.upcomingDrives) ? response.data.upcomingDrives : []);
+      toast.success('Ongoing drives fetched successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fetch ongoing drives');
+      setDrives([]);
+    } finally {
+      setLoadingDrives(false);
+    }
+  };
+
+  // Fetch completed placement drives
+  const fetchCompletedDrives = async () => {
+    try {
+      setLoadingCompletedDrives(true);
+      const response = await axios.get('http://localhost:3003/placementdrive/placement/list?type=faculty', {
+        withCredentials: true
+      });
+  
+      // Change this line to use pastDrives
+      setCompletedDrives(Array.isArray(response.data.pastDrives) ? response.data.pastDrives : []);
+      toast.success('Completed drives fetched successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fetch completed drives');
+      setCompletedDrives([]);
+    } finally {
+      setLoadingCompletedDrives(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOngoingDrives();
+    fetchCompletedDrives();
+  }, []);
 
   // Handle form submission for adding a placement drive
-  const handleFormSubmit = (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
-    const newDrive = {
-      companyName: event.target.companyName.value,
-      date: event.target.date.value,
-      noOfRounds: event.target.noOfRounds.value,
-      roundDescription: event.target.roundDescription.value,
-      techStack: event.target.techStack.value,
-    };
-    setDrives([...drives, newDrive]);
-    event.target.reset();
-  };
+    setSubmitLoading(true);
 
-  // Handle tab switch
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
-
-  // Show the popup when the faculty clicks the check icon
-  const handleShowPopup = (drive) => {
-    setCurrentDrive(drive);
-    setShowPopup(true);
-  };
-
-  // Handle form submission in popup and move the drive to completed
-  const handlePopupSubmit = (event) => {
-    event.preventDefault();
-
-    if (currentDrive && noPlacedStudents !== '') {
-      const completedDrive = {
-        ...currentDrive,
-        noPlacedStudents,
+    try {
+      const newDrive = {
+        companyName: event.target.companyName.value,
+        date: event.target.date.value,
+        noOfRounds: event.target.noOfRounds.value,
+        roundDescription: event.target.roundDescription.value,
+        techStack: event.target.techStack.value,
       };
 
-      // Move the drive to the completed drives
-      setCompletedDrives([...completedDrives, completedDrive]);
+      const response = await axios.post('http://localhost:3003/placementdrive/placement/add', newDrive, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-      // Remove the drive from the ongoing drives list
-      setDrives(drives.filter((drive) => drive !== currentDrive));
+      // Add the new drive to the list
+      toast.success('Placement drive added successfully!');
+      setDrives([...drives, response.data.drive]);
+      event.target.reset();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to add placement drive');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
-      // Clear state and close the popup
-      setShowPopup(false);
-      setCurrentDrive(null);
-      setNoPlacedStudents('');
+  // Handle completing a placement drive
+  const handlePopupSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitLoading(true);
+
+    try {
+      if (currentDrive && noPlacedStudents !== '') {
+        const response = await axios.put(
+          `http://localhost:3003/placementdrive/complete/${currentDrive._id}`,
+          { noPlacedStudents },
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        // Remove from ongoing drives and add to completed drives
+        toast.success('Placement drive completed successfully!');
+        setDrives(drives.filter((drive) => drive._id !== currentDrive._id));
+        setCompletedDrives([...completedDrives, response.data.drive]);
+
+        // Clear state and close popup
+        setShowPopup(false);
+        setCurrentDrive(null);
+        setNoPlacedStudents('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to complete placement drive');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -64,16 +133,14 @@ const AddPlacementDrive = () => {
       {/* Tabs for navigation */}
       <div className="flex mb-4 border-b">
         <button
-          className={`py-2 px-4 ${activeTab === 'add' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-            }`}
-          onClick={() => handleTabChange('add')}
+          className={`py-2 px-4 ${activeTab === 'add' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('add')}
         >
           Add Placement Drive
         </button>
         <button
-          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'
-            }`}
-          onClick={() => handleTabChange('completed')}
+          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('completed')}
         >
           Completed Placement Drives
         </button>
@@ -151,14 +218,24 @@ const AddPlacementDrive = () => {
             <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              disabled={submitLoading}
             >
-              Add Drive
+              {submitLoading ? (
+                <div className="flex items-center justify-center">
+                  <FaSpinner className="animate-spin mr-2" />
+                  Adding Drive...
+                </div>
+              ) : (
+                'Add Drive'
+              )}
             </button>
           </form>
 
           {/* Table of Added Placement Drives */}
           <h3 className="text-xl font-semibold mb-4">Added Placement Drives</h3>
-          {drives.length > 0 ? (
+          {loadingDrives ? (
+            <div className="text-center py-4">Loading drives...</div>
+          ) : drives.length > 0 ? (
             <table className="min-w-full bg-white border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
@@ -181,7 +258,10 @@ const AddPlacementDrive = () => {
                     <td className="py-2 px-4">
                       <FaCheckCircle
                         className="text-green-500 cursor-pointer"
-                        onClick={() => handleShowPopup(drive)}
+                        onClick={() => {
+                          setCurrentDrive(drive);
+                          setShowPopup(true);
+                        }}
                       />
                     </td>
                   </tr>
@@ -197,7 +277,9 @@ const AddPlacementDrive = () => {
           <h2 className="text-2xl font-semibold mb-4">Completed Placement Drives</h2>
 
           {/* Table of Completed Placement Drives */}
-          {completedDrives.length > 0 ? (
+          {loadingCompletedDrives ? (
+            <div className="text-center py-4">Loading completed drives...</div>
+          ) : completedDrives.length > 0 ? (
             <table className="min-w-full bg-white border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
@@ -241,13 +323,22 @@ const AddPlacementDrive = () => {
               <button
                 type="submit"
                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                disabled={submitLoading}
               >
-                Submit
+                {submitLoading ? (
+                  <div className="flex items-center justify-center">
+                    <FaSpinner className="animate-spin mr-2" />
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit'
+                )}
               </button>
               <button
                 type="button"
                 className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 ml-4"
                 onClick={() => setShowPopup(false)}
+                disabled={submitLoading}
               >
                 Cancel
               </button>
