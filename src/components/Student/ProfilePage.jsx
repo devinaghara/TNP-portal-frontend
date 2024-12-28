@@ -33,10 +33,12 @@ const ProfilePage = () => {
 
   const fetchStudentDetails = async () => {
     try {
+      setLoading(true);
+
       const response = await axios.get('http://localhost:3003/auth/student/details', {
         withCredentials: true,
         headers: {
-          'Content-Type': 'application/json', 
+          'Content-Type': 'application/json',
         }
       });
 
@@ -79,7 +81,7 @@ const ProfilePage = () => {
     setSaveStatus({ loading: true, error: null });
     try {
       const formData = new FormData();
-      
+
       // Clean up the data before sending
       const dataToSend = {
         ...editedUser,
@@ -90,14 +92,14 @@ const ProfilePage = () => {
         cgpa: Number(editedUser.cgpa),
         noOfBacklog: Number(editedUser.noOfBacklog),
         // Ensure arrays are properly formatted
-        interestedDomain: Array.isArray(editedUser.interestedDomain) 
-          ? editedUser.interestedDomain 
+        interestedDomain: Array.isArray(editedUser.interestedDomain)
+          ? editedUser.interestedDomain
           : editedUser.interestedDomain.split(',').map(item => item.trim()),
-        sgpa: Array.isArray(editedUser.sgpa) 
+        sgpa: Array.isArray(editedUser.sgpa)
           ? editedUser.sgpa.map(Number)
           : editedUser.sgpa.split(',').map(item => Number(item.trim()))
       };
-  
+
       // Append all user data to formData
       Object.keys(dataToSend).forEach(key => {
         if (key === 'interestedDomain' || key === 'sgpa') {
@@ -106,14 +108,14 @@ const ProfilePage = () => {
           formData.append(key, dataToSend[key]);
         }
       });
-  
+
       // Handle profile photo separately
       if (profilePhoto && profilePhoto.startsWith('data:image')) {
         const response = await fetch(profilePhoto);
         const blob = await response.blob();
         formData.append('profilePhoto', blob, 'profile.jpg');
       }
-  
+
       const response = await axios.put(
         'http://localhost:3003/auth/student/update',
         formData,
@@ -124,7 +126,7 @@ const ProfilePage = () => {
           },
         }
       );
-  
+
       if (response.data.success) {
         setUser(dataToSend);
         setIsEditing(false);
@@ -178,6 +180,21 @@ const ProfilePage = () => {
     setProfilePhoto(user.profilePhoto);
     setSaveStatus({ loading: false, error: null });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-4xl w-full mx-auto p-6">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+              <p className="text-gray-600 font-medium">Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg mt-8">

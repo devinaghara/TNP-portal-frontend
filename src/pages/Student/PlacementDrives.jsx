@@ -55,9 +55,13 @@ const PlacementDrives = () => {
     // Render loading state
     if (loading) {
         return (
-            <div className="p-8 text-center">
-                <FaSpinner className="animate-spin text-2xl text-blue-500 mx-auto" />
-                <p className="mt-4">Loading placement drives...</p>
+            <div className="p-8 min-h-screen bg-gray-50">
+                <div className="max-w-6xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6">Placement Drives</h1>
+                    <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow-sm">
+                        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+                    </div>
+                </div>
             </div>
         );
     }

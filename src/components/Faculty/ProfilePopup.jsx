@@ -126,9 +126,14 @@ const ProfilePopup = ({ onClose }) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-lg">
-          Loading...
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-4xl w-full mx-auto p-6">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+              <p className="text-gray-600 font-medium">Loading profile...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
