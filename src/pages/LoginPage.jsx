@@ -1,14 +1,19 @@
-/* eslint-disable react/no-unescaped-entities */
 import axios from "axios";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordError, setForgotPasswordError] = useState("");
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState("");
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -24,9 +29,11 @@ const LoginPage = () => {
           withCredentials: true,
         }
       );
-      console.log("Response:", response);
+
+      login(response.data);
+
       if (response.data.ProfileCompleted) {
-        if (response.data.role == "student") {
+        if (response.data.role === "student") {
           navigate("/");
         } else {
           navigate(`/${response.data.role}`);
@@ -38,11 +45,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -51,9 +54,39 @@ const LoginPage = () => {
   };
 
   const handleGoogleSignIn = () => {
-    // Handle Google OAuth sign-in flow
     console.log("Google Sign-in clicked");
-    // You might want to initiate a Google OAuth flow here
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotPasswordError("");
+    setForgotPasswordSuccess("");
+
+    if (!forgotPasswordEmail) {
+      setForgotPasswordError("Please enter your email");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3003/auth/resetemail",
+        { email: forgotPasswordEmail },
+        { withCredentials: true }
+      );
+
+      setForgotPasswordSuccess(response.data.message);
+
+      // Clear email and hide modal after 3 seconds
+      setTimeout(() => {
+        setShowForgotPasswordModal(false);
+        setForgotPasswordEmail("");
+      }, 3000);
+    } catch (error) {
+      setForgotPasswordError(
+        error.response?.data?.message ||
+        "An error occurred. Please try again."
+      );
+    }
   };
 
   return (
@@ -68,7 +101,6 @@ const LoginPage = () => {
         <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
 
-          {/* Display error if exists */}
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
           <form className="flex flex-col" onSubmit={handleSubmit}>
@@ -103,12 +135,13 @@ const LoginPage = () => {
             </div>
 
             <div className="mb-6">
-              <a
-                href="/forgot-password"
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
                 className="text-blue-500 hover:underline"
               >
                 Forgot Password?
-              </a>
+              </button>
             </div>
 
             <button
@@ -120,14 +153,15 @@ const LoginPage = () => {
           </form>
 
           <div className="mt-4 text-center">
-            {/* Google Sign-in Button */}
-            <button
-              className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 mt-4"
-              onClick={handleGoogleSignIn}
-            >
-              <FcGoogle className="w-5 h-5 mr-2" />
-              Sign in with Google
-            </button>
+            <div className="flex items-center justify-center mt-6">
+              <button
+                className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 mt-4"
+                onClick={handleGoogleSignIn}
+              >
+                <FcGoogle className="w-5 h-5 mr-2" />
+                Sign in with Google
+              </button>
+            </div>
 
             <p className="text-gray-700 mt-4">
               Don't have an account?{" "}
@@ -138,6 +172,56 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-center">Forgot Password</h2>
+
+            {forgotPasswordError && (
+              <p className="text-red-500 text-center mb-4">{forgotPasswordError}</p>
+            )}
+
+            {forgotPasswordSuccess && (
+              <p className="text-green-500 text-center mb-4">{forgotPasswordSuccess}</p>
+            )}
+
+            <form onSubmit={handleForgotPassword}>
+              <div className="mb-4">
+                <label htmlFor="forgotEmail" className="block text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="forgotEmail"
+                  name="forgotEmail"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  required
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPasswordModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Send Reset Link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

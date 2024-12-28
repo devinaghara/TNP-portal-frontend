@@ -1,27 +1,148 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaUserCircle } from 'react-icons/fa';
+import axios from 'axios';
 
 const ProfilePage = () => {
   const [user, setUser] = useState({
-    name: 'John Doe',
-    studentId: '123456',
-    collegeName: 'ABC University',
-    department: 'Computer Science',
-    email: 'johndoe@gmail.com',
-    cgpa: '9.5',
-    interestedDomains: ['Web Development', 'AI', 'Machine Learning'],
-    mobileNumber: '9876543210',
-    sscResult: '85%',
-    hscResult: '80%',
-    diplomaResult: 'N/A',
-    sgpa: ['9.0', '8.8', '8.7', '9.2', '9.1', '8.9', '9.3', '9.5'], // SGPA for 8 semesters
-    backlogs: 1,
-    profilePhoto: '', // Added profile photo field
+    name: '',
+    studentId: '',
+    collegeName: '',
+    departmentName: '',
+    email: '',
+    cgpa: '',
+    interestedDomain: [],
+    mobileNumber: '',
+    sscResult: '',
+    hscResult: '',
+    diplomaResult: '',
+    sgpa: [],
+    noOfBacklog: 0,
+    profilePhoto: '',
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
-  const [profilePhoto, setProfilePhoto] = useState(null); // State for profile photo
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saveStatus, setSaveStatus] = useState({ loading: false, error: null });
+
+  useEffect(() => {
+    fetchStudentDetails();
+  }, []);
+
+  const fetchStudentDetails = async () => {
+    try {
+      const response = await axios.get('http://localhost:3003/auth/student/details', {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json', 
+        }
+      });
+
+      if (response.data.success) {
+        const studentData = response.data.data;
+        console.log(studentData.cgpa)
+        setUser({
+          name: studentData.name || '',
+          studentId: studentData.studentId || '',
+          collegeName: studentData.collageName || '',
+          departmentName: studentData.departmentName || '',
+          email: studentData.email || '',
+          cgpa: studentData.cgpa || '',
+          interestedDomain: studentData.interestedDomain || [],
+          mobileNumber: studentData.mobileNumber || '',
+          sscResult: studentData.sscResult || '',
+          hscResult: studentData.hscResult || '',
+          diplomaResult: studentData.diplomaResult || '',
+          sgpa: studentData.sgpa ? Object.values(studentData.sgpa) : [],
+          noOfBacklog: studentData.noOfBacklog || 0,
+          profilePhoto: studentData.profilePhoto || '',
+        });
+
+        setEditedUser(studentData);
+      }
+    } catch (err) {
+      // Error handling
+      if (err.response?.status === 401) {
+        setError('Please log in to view your profile');
+      } else {
+        setError('Failed to fetch student details');
+      }
+      console.error('Error fetching student details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveChanges = async () => {
+    setSaveStatus({ loading: true, error: null });
+    try {
+      const formData = new FormData();
+      
+      // Clean up the data before sending
+      const dataToSend = {
+        ...editedUser,
+        // Convert numeric strings to numbers where needed
+        sscResult: Number(editedUser.sscResult),
+        hscResult: Number(editedUser.hscResult),
+        diplomaResult: editedUser.diplomaResult ? Number(editedUser.diplomaResult) : undefined,
+        cgpa: Number(editedUser.cgpa),
+        noOfBacklog: Number(editedUser.noOfBacklog),
+        // Ensure arrays are properly formatted
+        interestedDomain: Array.isArray(editedUser.interestedDomain) 
+          ? editedUser.interestedDomain 
+          : editedUser.interestedDomain.split(',').map(item => item.trim()),
+        sgpa: Array.isArray(editedUser.sgpa) 
+          ? editedUser.sgpa.map(Number)
+          : editedUser.sgpa.split(',').map(item => Number(item.trim()))
+      };
+  
+      // Append all user data to formData
+      Object.keys(dataToSend).forEach(key => {
+        if (key === 'interestedDomain' || key === 'sgpa') {
+          formData.append(key, JSON.stringify(dataToSend[key]));
+        } else if (dataToSend[key] !== undefined && dataToSend[key] !== '') {
+          formData.append(key, dataToSend[key]);
+        }
+      });
+  
+      // Handle profile photo separately
+      if (profilePhoto && profilePhoto.startsWith('data:image')) {
+        const response = await fetch(profilePhoto);
+        const blob = await response.blob();
+        formData.append('profilePhoto', blob, 'profile.jpg');
+      }
+  
+      const response = await axios.put(
+        'http://localhost:3003/auth/student/update',
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+  
+      if (response.data.success) {
+        setUser(dataToSend);
+        setIsEditing(false);
+        alert('Profile updated successfully!');
+      } else {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setSaveStatus({
+        loading: false,
+        error: err.response?.data?.message || 'Failed to update profile',
+      });
+      alert(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSaveStatus({ loading: false, error: null });
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,7 +156,7 @@ const ProfilePage = () => {
     const { value } = e.target;
     setEditedUser((prev) => ({
       ...prev,
-      interestedDomains: value.split(',').map((domain) => domain.trim()),
+      interestedDomain: value.split(',').map((domain) => domain.trim()),
     }));
   };
 
@@ -51,15 +172,11 @@ const ProfilePage = () => {
     }
   };
 
-  const saveChanges = () => {
-    setUser(editedUser);
-    setIsEditing(false);
-  };
-
   const cancelEditing = () => {
     setEditedUser(user);
     setIsEditing(false);
     setProfilePhoto(user.profilePhoto);
+    setSaveStatus({ loading: false, error: null });
   };
 
   return (
@@ -180,13 +297,13 @@ const ProfilePage = () => {
           {isEditing ? (
             <input
               type="text"
-              name="department"
-              value={editedUser.department}
+              name="departmentName"
+              value={editedUser.departmentName}
               onChange={handleInputChange}
               className="border border-gray-300 rounded p-2 w-full"
             />
           ) : (
-            <p>{user.department}</p>
+            <p>{user.departmentName}</p>
           )}
         </div>
 
@@ -244,18 +361,18 @@ const ProfilePage = () => {
           {isEditing ? (
             <input
               type="text"
-              name="interestedDomains"
-              value={editedUser.interestedDomains.join(', ')}
+              name="interestedDomain"
+              value={editedUser.interestedDomain.join(', ')}
               onChange={handleInterestedDomainsChange}
               className="border border-gray-300 rounded p-2 w-full"
             />
           ) : (
-            <p>{user.interestedDomains.join(', ')}</p>
+            <p>{user.interestedDomain.join(', ')}</p>
           )}
         </div>
 
         {/* SGPA for 8 Semesters */}
-        <div className="md:col-span-2 border p-4 rounded">
+        {/* <div className="md:col-span-2 border p-4 rounded">
           <h3 className="font-semibold mb-2">SGPA (All 8 Semesters)</h3>
           {isEditing ? (
             <input
@@ -280,6 +397,34 @@ const ProfilePage = () => {
               ))}
             </div>
           )}
+        </div> */}
+
+        {/* SGPA for 8 Semesters */}
+        <div className="md:col-span-2 border p-4 rounded">
+          <h3 className="font-semibold mb-2">SGPA (All 8 Semesters)</h3>
+          {isEditing ? (
+            <input
+              type="text"
+              name="sgpa"
+              value={Array.isArray(editedUser.sgpa) ? editedUser.sgpa.join(', ') : ''}
+              onChange={(e) =>
+                setEditedUser((prev) => ({
+                  ...prev,
+                  sgpa: e.target.value.split(', ').filter(item => item !== ''),
+                }))
+              }
+              className="border border-gray-300 rounded p-2 w-full"
+            />
+          ) : (
+            <div className="grid grid-cols-4 gap-4">
+              {Array.isArray(user.sgpa) && user.sgpa.map((sem, index) => (
+                <div key={index} className="border p-2 text-center rounded">
+                  <p>Sem {index + 1}</p>
+                  <p className="font-semibold">{sem}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Backlogs */}
@@ -288,13 +433,13 @@ const ProfilePage = () => {
           {isEditing ? (
             <input
               type="number"
-              name="backlogs"
-              value={editedUser.backlogs}
+              name="noOfBacklog"
+              value={editedUser.noOfBacklog}
               onChange={handleInputChange}
               className="border border-gray-300 rounded p-2 w-full"
             />
           ) : (
-            <p>{user.backlogs}</p>
+            <p>{user.noOfBacklog}</p>
           )}
         </div>
       </div>
@@ -304,12 +449,15 @@ const ProfilePage = () => {
           <div>
             <button
               onClick={saveChanges}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
+              disabled={saveStatus.loading}
+              className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2 ${saveStatus.loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
-              Save Changes
+              {saveStatus.loading ? 'Saving...' : 'Save Changes'}
             </button>
             <button
               onClick={cancelEditing}
+              disabled={saveStatus.loading}
               className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
             >
               Cancel
@@ -324,6 +472,11 @@ const ProfilePage = () => {
           </button>
         )}
       </div>
+
+      {/* Error message display */}
+      {saveStatus.error && (
+        <div className="text-red-500 text-center mt-4">{saveStatus.error}</div>
+      )}
     </div>
   );
 };

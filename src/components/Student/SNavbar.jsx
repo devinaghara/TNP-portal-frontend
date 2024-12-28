@@ -33,7 +33,7 @@ const SNavbar = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      const response = await axios.delete(
+      const response = await axios.post(
         'http://localhost:3003/auth/logout', 
         {}, 
         {

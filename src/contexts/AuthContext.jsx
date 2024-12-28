@@ -1,31 +1,62 @@
-import React, { createContext, useState, useContext } from 'react';
+// contexts/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-// Create Context
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-// Provider Component
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [role, setRole] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const login = (userData, userRole) => {
+    useEffect(() => {
+        checkAuthStatus();
+    }, []);
+
+    const checkAuthStatus = async () => {
+        try {
+            const response = await axios.get('http://localhost:3003/auth/check-auth', {
+                withCredentials: true
+            });
+            if (response.data.user) {
+                setUser(response.data.user);
+            }
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const login = (userData) => {
         setUser(userData);
-        setRole(userRole);
     };
 
-    const logout = () => {
-        setUser(null);
-        setRole(null);
+    const logout = async () => {
+        try {
+            await axios.post('http://localhost:3003/auth/logout', {}, {
+                withCredentials: true
+            });
+            setUser(null);
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
     };
 
-    return (
-        <AuthContext.Provider value={{ user, role, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+    const value = {
+        user,
+        login,
+        logout,
+        loading
+    };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom Hook to use AuthContext
 export const useAuth = () => {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };

@@ -7,7 +7,6 @@ import SignUpPage from './pages/SignupPage';
 import StudentSignUpPage from './pages/StudentSignUpPage';
 import FacultySignUpPage from './pages/FacultySignUpPage';
 import CompanySignUpPage from './pages/CompanySignUpPage';
-// import Homepage from './pages/Homepage';
 import FNavbar from './components/Faculty/fNavbar';
 import AddPlacementDrive from './pages/faculty/AddPlacementDrive';
 import AddResource from './pages/faculty/AddResource';
@@ -20,6 +19,8 @@ import Feedback from './pages/Student/Feedback';
 import Support from './pages/Student/SupportPage';
 import ChartPage from './pages/Student/ChartPage';
 import ProfilePage from './components/Student/ProfilePage';
+import ResetPasswordPage from './components/Auth/ResetPasswordPage';
+import OTPVerificationPage from './components/otpVarification/OTPVerificationPage';
 
 const App = () => {
   return (
@@ -29,9 +30,11 @@ const App = () => {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-otp" element={<OTPVerificationPage />} />
           <Route path="/signup/student" element={<StudentSignUpPage />} />
           <Route path="/signup/faculty" element={<FacultySignUpPage />} />
           <Route path="/signup/company" element={<CompanySignUpPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} /> {/* New Route */}
 
           {/* Protected Student Routes */}
           <Route path="/" element={

@@ -60,10 +60,41 @@ const AddPlacementDrive = () => {
   }, []);
 
   // Handle form submission for adding a placement drive
+  // const handleFormSubmit = async (event) => {
+  //   event.preventDefault();
+  //   setSubmitLoading(true);
+
+  //   try {
+  //     const newDrive = {
+  //       companyName: event.target.companyName.value,
+  //       date: event.target.date.value,
+  //       noOfRounds: event.target.noOfRounds.value,
+  //       roundDescription: event.target.roundDescription.value,
+  //       techStack: event.target.techStack.value,
+  //     };
+
+  //     const response = await axios.post('http://localhost:3003/placementdrive/placement/add', newDrive, {
+  //       withCredentials: true,
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       }
+  //     });
+
+  //     // Add the new drive to the list
+  //     toast.success('Placement drive added successfully!');
+  //     setDrives([...drives, response.data.drive]);
+  //     event.target.reset();
+  //   } catch (error) {
+  //     toast.error(error.response?.data?.message || 'Failed to add placement drive');
+  //   } finally {
+  //     setSubmitLoading(false);
+  //   }
+  // };
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
     setSubmitLoading(true);
-
+  
     try {
       const newDrive = {
         companyName: event.target.companyName.value,
@@ -72,19 +103,24 @@ const AddPlacementDrive = () => {
         roundDescription: event.target.roundDescription.value,
         techStack: event.target.techStack.value,
       };
-
+  
+      console.log('Submitting new drive:', newDrive); // Add logging
+  
       const response = await axios.post('http://localhost:3003/placementdrive/placement/add', newDrive, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'
         }
       });
-
-      // Add the new drive to the list
+  
+      console.log('Server response:', response.data); // Add logging
+  
+      await fetchOngoingDrives();
+      
       toast.success('Placement drive added successfully!');
-      setDrives([...drives, response.data.drive]);
       event.target.reset();
     } catch (error) {
+      console.error('Error adding placement drive:', error); // Detailed error logging
       toast.error(error.response?.data?.message || 'Failed to add placement drive');
     } finally {
       setSubmitLoading(false);

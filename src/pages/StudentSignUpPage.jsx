@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 const StudentSignUpPage = () => {
   const [selectedDomains, setSelectedDomains] = useState([]);
@@ -9,6 +10,8 @@ const StudentSignUpPage = () => {
 
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { login } = useAuth();
+
 
   const handleDomainChange = (event) => {
     const { value, checked } = event.target;
@@ -28,15 +31,14 @@ const StudentSignUpPage = () => {
   const email = state?.email || "";
   const role = state?.role || "";
   const name = state?.name || "";
-  const idNo = state?.idNo || "";
+  const idNumber = state?.idNumber || state?.idNo || "";
 
   useEffect(() => {
-    // If no email or role, or if role is not 'student', redirect to signup page
-    // console.log(role);
-    if (!email || !role || role !== "Student") {
+    // More robust check
+    if (!email || !role || !["Student", "student"].includes(role)) {
       navigate("/signup");
     }
-  }, [email, role, navigate]); // Make sure to include dependencies
+  }, [email, role, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -61,18 +63,32 @@ const StudentSignUpPage = () => {
     };
 
     try {
-      console.log(studentData);
       const response = await axios.post(
         "http://localhost:3003/auth/add/student",
         studentData,
         {
           withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
       );
-      console.log(response.data); // Handle success (e.g., redirect or show a success message)
-      navigate("/"); // Redirect to success page (adjust as needed)
+
+      login(response.data);
+
+      if (response.data.success) {
+        navigate("/"); // Update with your actual student dashboard route
+      } else {
+        alert(response.data.message || "Could not complete registration");
+      }
     } catch (error) {
-      console.error(error); // Handle error (e.g., show an error message)
+      console.error("Full error:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        alert(error.response.data.message || "Registration failed");
+      } else {
+        alert("An unexpected error occurred");
+      }
     }
   };
 
@@ -113,7 +129,7 @@ const StudentSignUpPage = () => {
                   type="text"
                   id="idNumber"
                   name="idNumber"
-                  value={idNo}
+                  value={idNumber}  // Use idNumber here
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   required
                 />
@@ -148,7 +164,7 @@ const StudentSignUpPage = () => {
                 required
               >
                 <option value="">Select College</option>
-                <option value="Depstar">Depstar</option>
+                <option value="DEPSTAR">DEPSTAR</option>
                 <option value="CSPIT">CSPIT</option>
               </select>
             </div>
