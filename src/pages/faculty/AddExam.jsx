@@ -133,7 +133,7 @@ const AddExam = () => {
   const updateExamStatus = async (examId, newStatus) => {
     setStatusUpdateLoading(prev => ({ ...prev, [examId]: true }));
     try {
-      const response = await axios.patch(
+      const response = await axios.put(
         `http://localhost:3003/exam/updateStatus/${examId}`,
         { examStatus: newStatus },
         { withCredentials: true }

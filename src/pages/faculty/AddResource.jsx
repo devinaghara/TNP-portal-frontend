@@ -1,141 +1,144 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import axios from 'axios'; // Import Axios
+import { Plus, Trash2, Link } from 'lucide-react';
 
 const AddResource = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [file, setFile] = useState(null);
+  const [subject, setSubject] = useState('');
+  const [driveLink, setDriveLink] = useState('');
   const [resources, setResources] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state for the POST request
 
-  // Fetch resources from the backend
-  useEffect(() => {
-    fetch('/api/resources')
-      .then((response) => response.json())
-      .then((data) => setResources(data))
-      .catch((error) => console.error('Error fetching resources:', error));
-  }, []);
-
-  // Handle form submission
-  const handleFormSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
-    if (!file) {
-      alert("Please select a file to upload");
+    // Validate the Google Drive link
+    if (!driveLink.match(/^https:\/\/(drive\.google\.com|docs\.google\.com)/)) {
+      setError('Invalid Google Drive link');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('category', category);
-    formData.append('file', file);
+    const newResource = {
+      subject,
+      driveLink,
+    };
 
-    // Send file and form data to the backend
-    fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        alert('File uploaded successfully');
-        setResources((prevResources) => [...prevResources, data.resource]); // Add new resource to the list
-        setTitle('');
-        setDescription('');
-        setCategory('');
-        setFile(null);
-      })
-      .catch((error) => {
-        console.error('Error uploading file:', error);
+    try {
+      setLoading(true);
+      console.log(newResource)
+      // Send POST request to your backend API
+      const response = await axios.post('http://localhost:3003/resource/add', {
+        subject:subject,
+        driveLink:driveLink
+      }, {
+        withCredentials: true,
+        
       });
+
+      if (response.data.success) {
+        // Update the resources list locally
+        setResources((prev) => [
+          ...prev,
+          { id: response.data.resourceId, ...newResource },
+        ]);
+        setSubject('');
+        setDriveLink('');
+      } else {
+        setError(response.data.message || 'Failed to add resource');
+      }
+    } catch (error) {
+      console.error('Error adding resource:', error);
+      setError('An error occurred while adding the resource');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteResource = (id) => {
+    setResources((prev) => prev.filter((resource) => resource.id !== id));
   };
 
   return (
-    <div className="max-w-lg p-6">
-      <h1 className="text-2xl font-bold mb-4">Add Resource</h1>
-      <form onSubmit={handleFormSubmit} className="space-y-4">
+    <div className="max-w-xl mx-auto bg-white shadow-lg rounded-2xl p-8">
+      <div className="flex items-center justify-center mb-6">
+        <Plus className="mr-2 text-blue-500" />
+        <h2 className="text-2xl font-bold text-gray-800">Study Resources Hub</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4 bg-gray-50 p-6 rounded-lg">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium mb-1">Title</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
           <input
             type="text"
-            id="title"
-            className="w-full border border-gray-300 p-2 rounded-md"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter document title"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200"
+            placeholder="Enter subject name"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium mb-1">Description</label>
-          <textarea
-            id="description"
-            className="w-full border border-gray-300 p-2 rounded-md"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter a brief description"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium mb-1">Category</label>
-          <select
-            id="category"
-            className="w-full border border-gray-300 p-2 rounded-md"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-          >
-            <option value="">Select Category</option>
-            <option value="lecture">Lecture Notes</option>
-            <option value="assignment">Assignment</option>
-            <option value="research">Research Paper</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="file" className="block text-sm font-medium mb-1">Upload File</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Resource Link</label>
           <input
-            type="file"
-            id="file"
-            className="w-full border border-gray-300 p-2 rounded-md"
-            onChange={(e) => setFile(e.target.files[0])}
+            type="url"
+            value={driveLink}
+            onChange={(e) => setDriveLink(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200"
+            placeholder="Paste Google Drive link"
             required
           />
         </div>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          disabled={loading}
+          className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center"
         >
-          Add Resource
+          {loading ? 'Adding...' : <><Plus className="mr-2" /> Add Resource</>}
         </button>
       </form>
 
-      {/* Show previously uploaded resources */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Previously Uploaded Resources</h2>
+        <h3 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+          <Link className="mr-2 text-blue-500" />
+          Uploaded Resources
+        </h3>
+
         {resources.length === 0 ? (
-          <p>No resources uploaded yet.</p>
+          <div className="text-center text-gray-500 p-4 bg-gray-50 rounded-md">
+            No resources uploaded yet
+          </div>
         ) : (
-          <ul className="space-y-4">
-            {resources.map((resource, index) => (
-              <li key={index} className="border border-gray-300 p-4 rounded-md">
-                <h3 className="font-bold">{resource.title}</h3>
-                <p>{resource.description}</p>
-                <p className="text-sm text-gray-600">Category: {resource.category}</p>
-                <a
-                  href={resource.fileUrl} // Backend should provide the file URL
-                  className="text-blue-500 hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
+          <div className="space-y-3">
+            {resources.map((resource) => (
+              <div
+                key={resource.id}
+                className="bg-gray-50 p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors"
+              >
+                <div>
+                  <p className="font-medium text-gray-800">{resource.subject}</p>
+                  <a
+                    href={resource.driveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 text-sm hover:underline flex items-center"
+                  >
+                    <Link className="mr-1 w-4 h-4" /> Open Resource
+                  </a>
+                </div>
+                <button
+                  onClick={() => deleteResource(resource.id)}
+                  className="text-red-500 hover:bg-red-50 p-2 rounded-full"
                 >
-                  Download
-                </a>
-              </li>
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>

@@ -21,6 +21,7 @@ import ChartPage from './pages/Student/ChartPage';
 import ProfilePage from './components/Student/ProfilePage';
 import ResetPasswordPage from './components/Auth/ResetPasswordPage';
 import OTPVerificationPage from './components/otpVarification/OTPVerificationPage';
+import FacultyChartPage from './pages/faculty/FacultyChartPage';
 
 const App = () => {
   return (
@@ -57,7 +58,7 @@ const App = () => {
               <FNavbar />
             </ProtectedRoute>
           }>
-            <Route index element={<ChartPage />} />
+            <Route index element={<FacultyChartPage />} />
             <Route path="addplacementDrives" element={<AddPlacementDrive />} />
             <Route path="addexam" element={<AddExam />} />
             <Route path="addresources" element={<AddResource />} />

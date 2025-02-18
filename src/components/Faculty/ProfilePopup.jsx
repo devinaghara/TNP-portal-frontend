@@ -77,29 +77,27 @@ const ProfilePopup = ({ onClose }) => {
     setSaveStatus({ loading: true, error: null });
     try {
       const formData = new FormData();
-      
-      Object.keys(editedFacultyData).forEach(key => {
+
+      // Append all updated fields
+      Object.keys(editedFacultyData).forEach((key) => {
         if (editedFacultyData[key] !== undefined && editedFacultyData[key] !== '') {
           formData.append(key, editedFacultyData[key]);
         }
       });
 
+      // Append profile photo if changed
       if (profileImage && profileImage !== facultyData.profilePhoto) {
         const response = await fetch(profileImage);
         const blob = await response.blob();
         formData.append('profilePhoto', blob, 'profile.jpg');
       }
 
-      const response = await axios.put(
-        'http://localhost:3003/auth/faculty/update',
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await axios.post('http://localhost:3003/auth/faculty/update', formData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       if (response.data.success) {
         setFacultyData(editedFacultyData);
@@ -109,9 +107,9 @@ const ProfilePopup = ({ onClose }) => {
     } catch (err) {
       setSaveStatus({
         loading: false,
-        error: err.response?.data?.message || 'Failed to update profile'
+        error: err.response?.data?.message || 'Failed to update profile',
       });
-      alert('Failed to update profile');
+      alert(saveStatus.error);
     } finally {
       setSaveStatus({ loading: false, error: null });
     }
@@ -126,13 +124,11 @@ const ProfilePopup = ({ onClose }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-4xl w-full mx-auto p-6">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-              <p className="text-gray-600 font-medium">Loading profile...</p>
-            </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="p-6 bg-white rounded-lg shadow-md">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-16 h-16 border-t-4 border-b-4 border-blue-500 rounded-full animate-spin"></div>
+            <p className="text-gray-600 font-medium">Loading profile...</p>
           </div>
         </div>
       </div>

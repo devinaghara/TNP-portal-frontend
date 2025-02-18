@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaSpinner } from 'react-icons/fa';
+import { Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PlacementDrives = () => {
@@ -14,19 +14,16 @@ const PlacementDrives = () => {
         try {
             setLoading(true);
             
-            // Fetch upcoming drives
             const upcomingResponse = await axios.get('http://localhost:3003/placementdrive/placement/list', {
                 withCredentials: true,
                 params: { status: 'upcoming' }
             });
 
-            // Fetch past drives
             const pastResponse = await axios.get('http://localhost:3003/placementdrive/placement/list', {
                 withCredentials: true,
                 params: { status: 'completed' }
             });
 
-            // Validate and set drives
             setUpcomingDrives(
                 Array.isArray(upcomingResponse.data.upcomingDrives) 
                     ? upcomingResponse.data.upcomingDrives 
@@ -52,7 +49,16 @@ const PlacementDrives = () => {
         fetchPlacementDrives();
     }, []);
 
-    // Render loading state
+    const InfoTooltip = ({ description }) => (
+        <div className="group relative inline-block ml-2">
+            <Info className="w-4 h-4 text-gray-500 cursor-help" />
+            <div className="invisible group-hover:visible absolute z-10 w-64 p-2 mt-2 text-sm text-white bg-gray-800 rounded-lg shadow-lg -left-28 top-full">
+                <div className="absolute w-3 h-3 -mt-5 rotate-45 bg-gray-800 left-1/2 -ml-1.5"></div>
+                {description}
+            </div>
+        </div>
+    );
+
     if (loading) {
         return (
             <div className="p-8 min-h-screen bg-gray-50">
@@ -66,7 +72,6 @@ const PlacementDrives = () => {
         );
     }
 
-    // Render error state
     if (error) {
         return (
             <div className="p-8 text-red-600">
@@ -80,7 +85,6 @@ const PlacementDrives = () => {
         <div className="p-8">
             <h1 className="text-3xl font-bold mb-8">Placement Drives</h1>
 
-            {/* Tabs */}
             <div className="mb-6">
                 <button
                     className={`py-2 px-4 ${activeTab === 'upcoming' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
@@ -96,7 +100,6 @@ const PlacementDrives = () => {
                 </button>
             </div>
 
-            {/* Upcoming Placement Drives */}
             {activeTab === 'upcoming' && (
                 <div className="mb-12">
                     <h2 className="text-2xl font-semibold mb-4">Upcoming Placement Drives</h2>
@@ -125,7 +128,10 @@ const PlacementDrives = () => {
                                             {new Date(drive.date).toLocaleDateString()}
                                         </td>
                                         <td className="px-4 py-2 border-b border-gray-200">{drive.companyName}</td>
-                                        <td className="px-4 py-2 border-b border-gray-200">{drive.noOfRounds}</td>
+                                        <td className="px-4 py-2 border-b border-gray-200">
+                                            {drive.noOfRounds}
+                                            <InfoTooltip description={drive.roundDescription} />
+                                        </td>
                                         <td className="px-4 py-2 border-b border-gray-200">{drive.techStack}</td>
                                     </tr>
                                 ))
@@ -141,7 +147,6 @@ const PlacementDrives = () => {
                 </div>
             )}
 
-            {/* Past Placement Drives */}
             {activeTab === 'past' && (
                 <div>
                     <h2 className="text-2xl font-semibold mb-4">Past Placement Drives</h2>
