@@ -4,6 +4,8 @@ import BarChart from '../../components/Charts/Barchart';
 
 const FacultyChartPage = () => {
   const [chartData, setChartData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     year: '',
     studentsApplied: '',
@@ -18,25 +20,31 @@ const FacultyChartPage = () => {
 
   const API_BASE_URL = 'http://localhost:3003/chart/chart-data';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(API_BASE_URL, { withCredentials: true });
-        if (response.data.success) {
-          setChartData(response.data.data);
-        } else {
-          console.error('Failed to fetch chart data:', response.data.message);
-        }
-      } catch (error) {
-        console.error('Error fetching chart data:', error.message);
+  const fetchChartData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(API_BASE_URL, { withCredentials: true });
+      if (response.data.success) {
+        setChartData(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch chart data');
       }
-    };
-    fetchData();
+    } catch (error) {
+      setError(error.message);
+      console.error('Error fetching chart data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChartData();
   }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const resetForm = () => {
@@ -50,6 +58,7 @@ const FacultyChartPage = () => {
       lowestPackage: ''
     });
     setEditData(null);
+    setError(null);
   };
 
   const openModal = (data = null) => {
@@ -77,49 +86,61 @@ const FacultyChartPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    
     try {
       const method = editData ? 'put' : 'post';
       const url = editData ? `${API_BASE_URL}/${editData._id}` : API_BASE_URL;
 
+      const payload = {
+        year: parseInt(formData.year),
+        totalStudentsApplied: parseInt(formData.studentsApplied),
+        studentsPlaced: parseInt(formData.studentsPlaced),
+        companiesHiring: parseInt(formData.companiesHiring),
+        highestPackage: parseFloat(formData.highestPackage),
+        averagePackage: parseFloat(formData.averagePackage),
+        lowestPackage: parseFloat(formData.lowestPackage)
+      };
+
       const response = await axios({
         method,
         url,
-        data: {
-          year: formData.year,
-          totalStudentsApplied: formData.studentsApplied,
-          studentsPlaced: formData.studentsPlaced,
-          companiesHiring: formData.companiesHiring,
-          highestPackage: formData.highestPackage,
-          averagePackage: formData.averagePackage,
-          lowestPackage: formData.lowestPackage
-        },
+        data: payload,
         withCredentials: true,
       });
 
-      if (response.data.success) {
-        const updatedData = await axios.get(API_BASE_URL, { withCredentials: true });
-        setChartData(updatedData.data.data);
-        closeModal();
-      } else {
-        console.error('Failed to save data:', response.data.message);
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to save data');
       }
+
+      await fetchChartData(); // Refresh the chart data
+      closeModal();
     } catch (error) {
-      console.error('Error saving data:', error.message);
+      setError(error.message);
+      console.error('Error saving data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
       const response = await axios.delete(`${API_BASE_URL}/${id}`, { withCredentials: true });
       
-      if (response.data.success) {
-        const updatedData = await axios.get(API_BASE_URL, { withCredentials: true });
-        setChartData(updatedData.data.data);
-      } else {
-        console.error('Failed to delete data:', response.data.message);
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to delete data');
       }
+
+      await fetchChartData(); // Refresh the chart data
     } catch (error) {
-      console.error('Error deleting data:', error.message);
+      setError(error.message);
+      console.error('Error deleting data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -288,12 +309,12 @@ const FacultyChartPage = () => {
                     >
                       Edit
                     </button>
-                    <button 
+                    {/* <button 
                       onClick={() => handleDelete(item._id)}
                       className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                     >
                       Delete
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>
