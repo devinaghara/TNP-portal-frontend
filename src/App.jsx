@@ -7,7 +7,7 @@ import SignUpPage from './pages/SignupPage';
 import StudentSignUpPage from './pages/StudentSignUpPage';
 import FacultySignUpPage from './pages/FacultySignUpPage';
 import CompanySignUpPage from './pages/CompanySignUpPage';
-import FNavbar from './components/Faculty/fNavbar';
+import FNavbar from './components/Faculty/FNavbar';
 import AddPlacementDrive from './pages/faculty/AddPlacementDrive';
 import AddResource from './pages/faculty/AddResource';
 import AddExam from './pages/faculty/AddExam';
@@ -22,6 +22,8 @@ import ProfilePage from './components/Student/ProfilePage';
 import ResetPasswordPage from './components/Auth/ResetPasswordPage';
 import OTPVerificationPage from './components/otpVarification/OTPVerificationPage';
 import FacultyChartPage from './pages/faculty/FacultyChartPage';
+import PlacementStatistics from './pages/faculty/PlacementStatistics';
+import PlacementForm from './components/Faculty/PlacementForm';
 
 const App = () => {
   return (
@@ -63,6 +65,8 @@ const App = () => {
             <Route path="addexam" element={<AddExam />} />
             <Route path="addresources" element={<AddResource />} />
             <Route path="studentcorner" element={<StudentCorner />} />
+            <Route path="placement-statistics" element={<PlacementStatistics />} />
+            <Route path="add-statistics" element={<PlacementForm />} />
           </Route>
 
           {/* Catch-all route */}

@@ -26,6 +26,8 @@ const FNavbar = () => {
         "/faculty/addexam",
         "/faculty/addresources",
         "/faculty/studentcorner",
+        "/faculty/placement-statistics",
+        "/faculty/add-statistics",
       ].includes(location.pathname)
     ) {
       navigate("/faculty");
@@ -56,10 +58,10 @@ const FNavbar = () => {
       if (response.data.success) {
         // Clear any localStorage items
         localStorage.clear();
-        
+
         // Close dropdown
         setDropdownOpen(false);
-        
+
         // Redirect to login page
         navigate('/login');
       } else {
@@ -76,9 +78,8 @@ const FNavbar = () => {
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 transform ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out md:translate-x-0 md:w-64 z-40`}
+        className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-300 ease-in-out md:translate-x-0 md:w-64 z-40`}
       >
         <div className="p-4">
           <h2
@@ -91,11 +92,10 @@ const FNavbar = () => {
             <li>
               <Link
                 to="/faculty/addplacementDrives"
-                className={`block px-4 py-2 hover:bg-gray-700 ${
-                  location.pathname.includes("addplacementDrives")
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("addplacementDrives")
                     ? "bg-gray-700"
                     : ""
-                }`}
+                  }`}
               >
                 Add Placement
               </Link>
@@ -103,9 +103,8 @@ const FNavbar = () => {
             <li>
               <Link
                 to="/faculty/addexam"
-                className={`block px-4 py-2 hover:bg-gray-700 ${
-                  location.pathname.includes("addexam") ? "bg-gray-700" : ""
-                }`}
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("addexam") ? "bg-gray-700" : ""
+                  }`}
               >
                 Add Exam
               </Link>
@@ -113,23 +112,43 @@ const FNavbar = () => {
             <li>
               <Link
                 to="/faculty/addresources"
-                className={`block px-4 py-2 hover:bg-gray-700 ${
-                  location.pathname.includes("addresources")
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("addresources")
                     ? "bg-gray-700"
                     : ""
-                }`}
+                  }`}
               >
                 Add Resources
               </Link>
             </li>
             <li>
               <Link
-                to="/faculty/studentcorner"
-                className={`block px-4 py-2 hover:bg-gray-700 ${
-                  location.pathname.includes("studentcorner")
+                to="/faculty/placement-statistics"
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("placement-statistics")
                     ? "bg-gray-700"
                     : ""
-                }`}
+                  }`}
+              >
+                Placement Statistics
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/faculty/add-statistics"
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("placement-statistics")
+                    ? "bg-gray-700"
+                    : ""
+                  }`}
+              >
+                Add Statistics
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/faculty/studentcorner"
+                className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("studentcorner")
+                    ? "bg-gray-700"
+                    : ""
+                  }`}
               >
                 Student Corner
               </Link>
@@ -148,9 +167,8 @@ const FNavbar = () => {
 
       {/* Main content area */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : "ml-0"
-        } md:ml-64`}
+        className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-0"
+          } md:ml-64`}
       >
         {/* Navbar */}
         <nav className="bg-gray-900 text-white p-4 flex items-center justify-between md:justify-start fixed top-0 left-0 w-full z-30">
@@ -190,7 +208,7 @@ const FNavbar = () => {
                     </button>
                   </li>
                   <li>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       disabled={isLoggingOut}
                       className="block w-full text-left px-4 py-2 hover:bg-gray-200 disabled:opacity-50"
