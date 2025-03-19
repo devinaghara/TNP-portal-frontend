@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { FaCheckCircle, FaEdit, FaSpinner } from 'react-icons/fa';
-import { CalendarDays, MapPin, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { FaCheckCircle, FaEdit, FaSpinner } from "react-icons/fa";
+import {
+  CalendarDays,
+  MapPin,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 // import { Alert, AlertDescription } from '@/components/ui/alert';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const AddExam = () => {
-  const [activeTab, setActiveTab] = useState('scheduled');
+  const [activeTab, setActiveTab] = useState("scheduled");
   const [exams, setExams] = useState([]);
   const [completedExams, setCompletedExams] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -14,24 +20,24 @@ const AddExam = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState({});
   const [formData, setFormData] = useState({
-    examDate: '',
-    examTime: '',
-    examDuration: '',
-    examDepartment: '',
-    examCollage: '',
-    examType: '',
-    venue: ''
+    examDate: "",
+    examTime: "",
+    examDuration: "",
+    examDepartment: "",
+    examCollege: "",
+    examType: "",
+    venue: "",
   });
 
   const resetForm = () => {
     setFormData({
-      examDate: '',
-      examTime: '',
-      examDuration: '',
-      examDepartment: '',
-      examCollage: '',
-      examType: '',
-      venue: ''
+      examDate: "",
+      examTime: "",
+      examDuration: "",
+      examDepartment: "",
+      examCollege: "",
+      examType: "",
+      venue: "",
     });
     setEditingIndex(null);
   };
@@ -39,20 +45,31 @@ const AddExam = () => {
   const fetchExams = async () => {
     try {
       setFetchLoading(true);
-      const response = await axios.get('http://localhost:3003/exam/show?type=faculty', {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        "http://localhost:3003/exam/show?type=faculty",
+        {
+          withCredentials: true,
+        }
+      );
 
       if (response.data.success) {
-        const scheduledExams = response.data.exams.filter(exam => exam.examStatus === 'scheduled');
-        const completed = response.data.exams.filter(exam => exam.examStatus === 'completed');
+        const scheduledExams = response.data.exams.filter(
+          (exam) => exam.examStatus === "scheduled"
+        );
+        const completed = response.data.exams.filter(
+          (exam) => exam.examStatus === "completed"
+        );
         setExams(scheduledExams);
         setCompletedExams(completed);
       } else {
         throw new Error(response.data.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to fetch exams');
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to fetch exams"
+      );
     } finally {
       setFetchLoading(false);
     }
@@ -64,9 +81,9 @@ const AddExam = () => {
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [id]: value
+      [id]: value,
     }));
   };
 
@@ -82,36 +99,38 @@ const AddExam = () => {
           {
             withCredentials: true,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
         );
 
         if (response.data.success) {
-          toast.success('Exam updated successfully!');
+          toast.success("Exam updated successfully!");
           resetForm();
           await fetchExams();
         }
       } else {
         const response = await axios.post(
-          'http://localhost:3003/exam/add',
-          { ...formData, examStatus: 'scheduled' },
+          "http://localhost:3003/exam/add",
+          { ...formData, examStatus: "scheduled" },
           {
             withCredentials: true,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
         );
 
         if (response.data.success) {
-          toast.success('Exam added successfully!');
+          toast.success("Exam added successfully!");
           resetForm();
           await fetchExams();
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to save exam');
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to save exam"
+      );
     } finally {
       setLoading(false);
     }
@@ -119,19 +138,19 @@ const AddExam = () => {
 
   const handleEditExam = (exam) => {
     setFormData({
-      examDate: exam.examDate?.split('T')[0] || '',
-      examTime: exam.examTime || '',
-      examDuration: exam.examDuration || '',
-      examDepartment: exam.examDepartment || '',
-      examCollage: exam.examCollage || '',
-      examType: exam.examType || '',
-      venue: exam.venue || ''
+      examDate: exam.examDate?.split("T")[0] || "",
+      examTime: exam.examTime || "",
+      examDuration: exam.examDuration || "",
+      examDepartment: exam.examDepartment || "",
+      examCollege: exam.examCollege || "",
+      examType: exam.examType || "",
+      venue: exam.venue || "",
     });
     setEditingIndex(exam._id);
   };
 
   const updateExamStatus = async (examId, newStatus) => {
-    setStatusUpdateLoading(prev => ({ ...prev, [examId]: true }));
+    setStatusUpdateLoading((prev) => ({ ...prev, [examId]: true }));
     try {
       const response = await axios.put(
         `http://localhost:3003/exam/updateStatus/${examId}`,
@@ -144,35 +163,43 @@ const AddExam = () => {
         await fetchExams();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to update exam status');
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update exam status"
+      );
     } finally {
-      setStatusUpdateLoading(prev => ({ ...prev, [examId]: false }));
+      setStatusUpdateLoading((prev) => ({ ...prev, [examId]: false }));
     }
   };
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const StatusBadge = ({ status }) => {
     const getStatusColor = (status) => {
       switch (status) {
-        case 'completed':
-          return 'bg-green-100 text-green-800';
-        case 'scheduled':
-          return 'bg-blue-100 text-blue-800';
+        case "completed":
+          return "bg-green-100 text-green-800";
+        case "scheduled":
+          return "bg-blue-100 text-blue-800";
         default:
-          return 'bg-gray-100 text-gray-800';
+          return "bg-gray-100 text-gray-800";
       }
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+          status
+        )}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -184,11 +211,11 @@ const AddExam = () => {
     }
 
     switch (exam.examStatus) {
-      case 'scheduled':
+      case "scheduled":
         return (
           <div className="flex space-x-2">
             <button
-              onClick={() => updateExamStatus(exam._id, 'completed')}
+              onClick={() => updateExamStatus(exam._id, "completed")}
               className="text-green-500 hover:text-green-600"
               title="Mark as completed"
             >
@@ -214,25 +241,38 @@ const AddExam = () => {
 
       <div className="mb-4">
         <button
-          className={`py-2 px-4 ${activeTab === 'scheduled' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('scheduled')}
+          className={`py-2 px-4 ${
+            activeTab === "scheduled"
+              ? "border-b-2 border-blue-500 text-blue-500"
+              : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("scheduled")}
         >
           Scheduled Exams
         </button>
         <button
-          className={`py-2 px-4 ${activeTab === 'completed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('completed')}
+          className={`py-2 px-4 ${
+            activeTab === "completed"
+              ? "border-b-2 border-blue-500 text-blue-500"
+              : "text-gray-500"
+          }`}
+          onClick={() => setActiveTab("completed")}
         >
           Completed Exams
         </button>
       </div>
 
-      {activeTab === 'scheduled' && (
+      {activeTab === "scheduled" && (
         <div>
           <form onSubmit={handleFormSubmit} className="space-y-4 max-w-lg mb-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="examDate" className="block text-sm font-medium mb-1">Date</label>
+                <label
+                  htmlFor="examDate"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Date
+                </label>
                 <input
                   type="date"
                   id="examDate"
@@ -243,7 +283,12 @@ const AddExam = () => {
                 />
               </div>
               <div>
-                <label htmlFor="examTime" className="block text-sm font-medium mb-1">Time</label>
+                <label
+                  htmlFor="examTime"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Time
+                </label>
                 <input
                   type="time"
                   id="examTime"
@@ -257,7 +302,12 @@ const AddExam = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="examType" className="block text-sm font-medium mb-1">Exam Type</label>
+                <label
+                  htmlFor="examType"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Exam Type
+                </label>
                 <input
                   type="text"
                   id="examType"
@@ -269,7 +319,12 @@ const AddExam = () => {
                 />
               </div>
               <div>
-                <label htmlFor="venue" className="block text-sm font-medium mb-1">Venue</label>
+                <label
+                  htmlFor="venue"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Venue
+                </label>
                 <input
                   type="text"
                   id="venue"
@@ -284,10 +339,15 @@ const AddExam = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="examCollage" className="block text-sm font-medium mb-1">College Name</label>
+                <label
+                  htmlFor="examCollege"
+                  className="block text-sm font-medium mb-1"
+                >
+                  College Name
+                </label>
                 <select
-                  id="examCollage"
-                  value={formData.examCollage}
+                  id="examCollege"
+                  value={formData.examCollege}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 p-2 rounded-md"
                   required
@@ -298,7 +358,12 @@ const AddExam = () => {
                 </select>
               </div>
               <div>
-                <label htmlFor="examDepartment" className="block text-sm font-medium mb-1">Department Name</label>
+                <label
+                  htmlFor="examDepartment"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Department Name
+                </label>
                 <select
                   id="examDepartment"
                   value={formData.examDepartment}
@@ -315,7 +380,12 @@ const AddExam = () => {
             </div>
 
             <div>
-              <label htmlFor="examDuration" className="block text-sm font-medium mb-1">Duration (minutes)</label>
+              <label
+                htmlFor="examDuration"
+                className="block text-sm font-medium mb-1"
+              >
+                Duration (minutes)
+              </label>
               <input
                 type="number"
                 id="examDuration"
@@ -333,7 +403,11 @@ const AddExam = () => {
                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                 disabled={loading}
               >
-                {loading ? 'Saving...' : (editingIndex ? 'Update Exam' : 'Add Exam')}
+                {loading
+                  ? "Saving..."
+                  : editingIndex
+                  ? "Update Exam"
+                  : "Add Exam"}
               </button>
               {editingIndex && (
                 <button
@@ -369,12 +443,15 @@ const AddExam = () => {
                 </thead>
                 <tbody>
                   {exams.map((exam) => (
-                    <tr key={exam._id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <tr
+                      key={exam._id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
                       <td className="py-2 px-4">{formatDate(exam.examDate)}</td>
                       <td className="py-2 px-4">{exam.examTime}</td>
                       <td className="py-2 px-4">{exam.examType}</td>
                       <td className="py-2 px-4">{exam.venue}</td>
-                      <td className="py-2 px-4">{exam.examCollage}</td>
+                      <td className="py-2 px-4">{exam.examCollege}</td>
                       <td className="py-2 px-4">{exam.examDepartment}</td>
                       <td className="py-2 px-4">{exam.examDuration} min</td>
                       <td className="py-2 px-4">
@@ -399,7 +476,7 @@ const AddExam = () => {
         </div>
       )}
 
-      {activeTab === 'completed' && (
+      {activeTab === "completed" && (
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold">Completed Exams</h3>
@@ -430,7 +507,9 @@ const AddExam = () => {
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="flex items-center space-x-2 text-gray-600">
                       <CalendarDays className="w-4 h-4" />
-                      <span className="text-sm">{formatDate(exam.examDate)}</span>
+                      <span className="text-sm">
+                        {formatDate(exam.examDate)}
+                      </span>
                     </div>
 
                     <div className="flex items-center space-x-2 text-gray-600">
