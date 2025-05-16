@@ -27,7 +27,7 @@ const FNavbar = () => {
         "/faculty/addresources",
         "/faculty/studentcorner",
         "/faculty/placement-statistics",
-        "/faculty/add-statistics",
+        // "/faculty/add-statistics",
       ].includes(location.pathname)
     ) {
       navigate("/faculty");
@@ -131,7 +131,7 @@ const FNavbar = () => {
                 Placement Statistics
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 to="/faculty/add-statistics"
                 className={`block px-4 py-2 hover:bg-gray-700 ${location.pathname.includes("placement-statistics")
@@ -141,7 +141,7 @@ const FNavbar = () => {
               >
                 Add Statistics
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 to="/faculty/studentcorner"
